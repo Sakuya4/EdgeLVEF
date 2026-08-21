@@ -1,4 +1,4 @@
-# Wall Student v12 model card
+# Student Model card
 
 ## Intended use
 
@@ -12,7 +12,7 @@ It is not approved for clinical diagnosis, triage, or treatment decisions.
 
 | Property | Value |
 |---|---|
-| File | `models/wall_student_v12/wall_curve_student_fp32.onnx` |
+| File | `models/student_model/student_model_fp32.onnx` |
 | SHA-256 | `FE5FC82B9615A2678FB5D8ABC341503FF731871B9A127A5964CC7A1AA3956194` |
 | Size | 3,955,338 bytes / 3.77 MiB |
 | Parameters | 985,634 |

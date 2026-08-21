@@ -8,7 +8,7 @@ experimental low-LVEF screening on edge hardware.
 
 ## Current deployment candidate
 
-The primary deployment path is **wall Student v12**:
+The primary deployment path is the **Student Model**:
 
 - MobileNetV3-Small two-wall heatmap model
 - 985,634 parameters
@@ -73,7 +73,8 @@ Detailed instructions:
 - [Embedded Linux verification](docs/verification/embedded-linux.md)
 - [Acceptance criteria](docs/verification/acceptance-criteria.md)
 - [Result template](docs/verification/report-template.md)
-- [Wall Student v12 model card](docs/models/wall-student-v12.md)
+- [Validation roadmap](docs/verification/validation-roadmap.md)
+- [Student Model card](docs/models/student-model.md)
 
 ## Repository boundaries
 

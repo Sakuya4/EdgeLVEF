@@ -6,7 +6,7 @@ This procedure is for the person holding the physical board.
 
 ```bash
 git rev-parse HEAD
-sha256sum -c models/wall_student_v12/SHA256SUMS
+sha256sum -c models/student_model/SHA256SUMS
 ```
 
 Both checksums must pass before testing. Do not convert or quantize the model

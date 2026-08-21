@@ -49,7 +49,7 @@ math. `scripts/` contains only thin launchers around these interfaces.
 
 ## Frozen artifact rule
 
-Board validation must use the files under `models/wall_student_v12/` without
+Board validation must use the files under `models/student_model/` without
 editing them. Any retraining, threshold selection, quantization, or graph
 conversion creates a new model version and requires a new model card, checksum,
 and validation report.

@@ -16,4 +16,4 @@ jobs:
       - run: python -m pip install -e . pytest
       - run: python -m pytest -q
       - run: sha256sum -c SHA256SUMS
-        working-directory: models/wall_student_v12
+        working-directory: models/student_model

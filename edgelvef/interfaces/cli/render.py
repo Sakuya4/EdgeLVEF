@@ -14,7 +14,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Render blinded two-wall and ED/ES overlays")
     parser.add_argument("input", type=Path)
     parser.add_argument("output", type=Path)
-    parser.add_argument("--model", type=Path, default=REPOSITORY_ROOT / "models/wall_student_v12/wall_curve_student_fp32.onnx")
+    parser.add_argument("--model", type=Path, default=REPOSITORY_ROOT / "models/student_model/student_model_fp32.onnx")
     parser.add_argument("--provider", default="CPUExecutionProvider")
     parser.add_argument("--crop", type=parse_crop)
     parser.add_argument("--fps", type=float, default=15.0)

@@ -24,8 +24,8 @@ def parse_crop(value: str) -> tuple[int, int, int, int]:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Analyze one PLAX-compatible full-cycle cine")
     parser.add_argument("input", type=Path)
-    parser.add_argument("--model", type=Path, default=REPOSITORY_ROOT / "models/wall_student_v12/wall_curve_student_fp32.onnx")
-    parser.add_argument("--head", type=Path, default=REPOSITORY_ROOT / "models/wall_student_v12/frozen_edge_head.json")
+    parser.add_argument("--model", type=Path, default=REPOSITORY_ROOT / "models/student_model/student_model_fp32.onnx")
+    parser.add_argument("--head", type=Path, default=REPOSITORY_ROOT / "models/student_model/student_head.json")
     parser.add_argument("--provider", default="CPUExecutionProvider")
     parser.add_argument("--crop", type=parse_crop, help="x1,y1,x2,y2 sector crop before resizing")
     args = parser.parse_args()

@@ -63,5 +63,5 @@ def system_record(target_name: str, physical_target_claimed: bool) -> dict[str, 
         "python": platform.python_version(),
         "cpu_count": os.cpu_count(),
         "os_release": os_release_path.read_text(encoding="utf-8", errors="replace") if os_release_path.exists() else None,
-        "scope": "wall Student forward only; excludes decode, tracking, and LVEF head",
+        "scope": "Student Model forward only; excludes decode, tracking, and LVEF head",
     }

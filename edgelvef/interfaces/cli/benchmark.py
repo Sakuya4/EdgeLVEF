@@ -9,8 +9,8 @@ from .analyze import MODEL_SHA256, REPOSITORY_ROOT
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Benchmark the frozen wall Student on an execution target")
-    parser.add_argument("--model", type=Path, default=REPOSITORY_ROOT / "models/wall_student_v12/wall_curve_student_fp32.onnx")
+    parser = argparse.ArgumentParser(description="Benchmark the frozen Student Model on an execution target")
+    parser.add_argument("--model", type=Path, default=REPOSITORY_ROOT / "models/student_model/student_model_fp32.onnx")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--target-name", required=True)
     parser.add_argument("--provider", default="CPUExecutionProvider")

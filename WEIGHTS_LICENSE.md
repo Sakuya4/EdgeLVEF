@@ -13,7 +13,7 @@ The checkpoints are supplied without warranties and are not approved for
 clinical use. The Python source code has no separate open-source license grant
 unless one is added by the repository owner.
 
-Wall Student v12 was trained from EchoXFlow target-domain data using
+The Student Model was trained from EchoXFlow target-domain data using
 Teacher-generated wall paths. Redistribution or commercial use must also be
 reviewed against the upstream Teacher/model terms; this repository does not
 grant rights beyond those upstream terms.
