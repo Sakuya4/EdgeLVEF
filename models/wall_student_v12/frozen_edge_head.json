@@ -1,0 +1,11 @@
+{
+  "development_exam_n": 93,
+  "development_low_ef_n": 13,
+  "lvef_intercept": 40.83771383016499,
+  "lvef_global_fs_slope": 40.08269315515111,
+  "low_ef_score_threshold": -0.22548829019069672,
+  "low_ef_definition": 40.0,
+  "source": "EchoXFlow development folds 0-2, exam-level median global_fs",
+  "source_sha256": "C1503D9FE393E449DF366744C6E019CCEE0DDC57301766A274B935574FC0A9A1",
+  "locked_folds": [0, 1, 2]
+}

@@ -1,83 +1,99 @@
 # EdgeLVEF
 
-PLAX-only research prototype for estimating LVEF from an echocardiography cine.
-The current public checkpoint bundle is the **Student v4 five-fold ensemble**:
-MobileNetV3-Small frame encoder with a lightweight temporal convolutional head.
+PLAX-only research software for lightweight wall-motion analysis and
+experimental low-LVEF screening on edge hardware.
 
-> Research use only. This model is not a medical device and must not be used to
-> diagnose or treat patients.
+> Research use only. This repository is not a medical device and must not be
+> used to diagnose or treat patients.
 
-## Quick start
+## Current deployment candidate
 
-Python 3.11 is recommended.
+The primary deployment path is **wall Student v12**:
+
+- MobileNetV3-Small two-wall heatmap model
+- 985,634 parameters
+- FP32 ONNX, 3.77 MiB
+- 320 x 320 frames, dynamic batch
+- SHA-256 `FE5FC82...3956194`
+- full-cycle global fractional shortening mapped by a frozen development-only
+  linear head
+
+The older Student v4 direct-regression ensemble remains under
+`checkpoints/student_v4/` for reproducibility, but it is not the recommended
+board-validation target.
+
+## Install
 
 ```bash
 git clone https://github.com/Sakuya4/EdgeLVEF.git
 cd EdgeLVEF
 python -m pip install -e .
-python -m edgelvef.infer path/to/plax_cine.mp4
 ```
 
-The input may be an `.mp4`, `.avi`, `.mov`, or an `.npz` containing a `frames`
-array shaped `[time, height, width]`. Exactly 32 uniformly spaced frames are
-resized to 112 x 112 grayscale images, matching training preprocessing.
+## Analyze one PLAX cine
 
-If a video includes the full ultrasound-machine interface, crop it to the
-sector before inference:
+Use a PLAX-compatible cine containing at least one full cardiac cycle:
 
 ```bash
-python -m edgelvef.infer cine.mp4 --crop 120,40,920,840
+edgelvef-analyze path/to/plax_cine.mp4 --provider CPUExecutionProvider
 ```
 
-Example output:
+The input must show the scan-converted ultrasound sector, not the complete
+machine user interface. Crop a full-interface export before analysis:
 
-```json
-{
-  "lvef_percent": 51.2,
-  "model_std_percent": 2.1,
-  "fold_predictions_percent": [49.8, 52.0, 50.7, 54.1, 49.4],
-  "low_ef_probability_research_only": 0.31
-}
+```bash
+edgelvef-analyze cine.mp4 --crop 120,40,920,840
 ```
 
-`model_std_percent` measures disagreement among the five checkpoints. It is
-not a validated clinical uncertainty interval. The low-EF probability is not
-calibrated for external clinical use and no decision threshold is provided.
+The output includes the experimental LVEF mapping, low-EF score, global
+fractional shortening, wall confidence, valid-frame fraction, and ED/ES phase.
+The LVEF output is secondary research output; it is not a clinical measurement.
 
-## Current evidence
+Render the predicted walls and ED/ES candidates for visual verification:
 
-Student v4 was evaluated by exam-level five-fold out-of-fold testing on 164
-real reference exams, including 18 exams with LVEF <= 40%:
+```bash
+edgelvef-render path/to/plax_cine.mp4 outputs/wall-overlay.mp4
+```
 
-| Metric | Result |
-|---|---:|
-| LVEF MAE | 6.00 percentage points |
-| LVEF RMSE | 7.76 percentage points |
-| Pearson r | 0.298 |
-| Low-EF AUROC | 0.694 |
+## Validate an Embedded Linux board
 
-These are out-of-fold results from the corresponding fold checkpoints, not a
-prospective external validation of the five-model ensemble. The continuous
-output regresses toward the population mean and missed the low-EF tail at the
-literal 40% cutoff. Do not describe this release as clinically validated.
+Run on the physical board, not on the development computer:
 
-The strongest experimental low-EF result in the project is a structured
-wall-motion probe (AUROC 0.892, AUPRC 0.582), but it is not included as a
-deployable model because it still depends on a separate landmark Teacher. The
-next research version will replace the single measurement line with opposing
-PLAX wall tracking and regional fractional-shortening features.
+```bash
+bash scripts/run_embedded_verification.sh imx93-board CPUExecutionProvider
+```
 
-## Files
+The JSON result records the model checksum, operating system, architecture,
+active ONNX provider, median/p95 latency, output shape, and finite-output check.
+Do not label CPU fallback as NPU execution.
 
-- `edgelvef/model.py`: MobileNetV3-Small + temporal head definition.
-- `edgelvef/infer.py`: video/NPZ preprocessing and ensemble inference.
-- `checkpoints/student_v4/`: five fold-specific checkpoints.
-- `MODEL_CARD.md`: scope, data provenance, metrics, and limitations.
+Detailed instructions:
 
-## Data and weight terms
+- [Architecture](docs/architecture.md)
+- [Embedded Linux verification](docs/verification/embedded-linux.md)
+- [Acceptance criteria](docs/verification/acceptance-criteria.md)
+- [Result template](docs/verification/report-template.md)
+- [Wall Student v12 model card](docs/models/wall-student-v12.md)
 
-The checkpoints were trained using EchoXFlow-derived research data. EchoXFlow
-is distributed under CC BY-NC-SA 4.0. This repository therefore limits the
-released checkpoints to non-commercial research and evaluation; see
-`WEIGHTS_LICENSE.md`. No source echocardiograms or patient-level data are
-included.
+## Repository boundaries
+
+```text
+edgelvef/domain          Pure wall geometry and frozen decision rules
+edgelvef/application     Cine-analysis use cases and ports
+edgelvef/infrastructure ONNX Runtime, video, configuration, system adapters
+edgelvef/interfaces      Command-line entry points
+models/                  Frozen deployable artifacts and checksums
+scripts/                 Thin operator scripts; no model logic
+tests/                   Unit and ONNX integration tests
+docs/                    Architecture and verification procedures
+checkpoints/student_v4   Legacy research baseline
+```
+
+## Evidence boundary
+
+The current confirmatory EchoXFlow evaluation used 68 exams, only five of which
+had LVEF <=40%. Raw global fractional shortening achieved AUROC 0.902; the
+continuous mapping had MAE 6.57 percentage points and overestimated the low-EF
+tail. These are internal research results, not external clinical validation.
+
+No patient images or source training data are included.

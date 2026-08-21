@@ -4,15 +4,24 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "edgelvef"
-version = "0.1.0"
-description = "PLAX-only research LVEF inference prototype"
+version = "0.2.0"
+description = "PLAX wall-motion analysis and lightweight research LVEF prototype"
 requires-python = ">=3.10"
 dependencies = [
     "numpy>=1.24",
+    "onnxruntime>=1.18",
     "opencv-python>=4.8",
     "torch>=2.1",
     "torchvision>=0.16",
 ]
 
-[tool.setuptools]
-packages = ["edgelvef"]
+[project.scripts]
+edgelvef-analyze = "edgelvef.interfaces.cli.analyze:main"
+edgelvef-benchmark = "edgelvef.interfaces.cli.benchmark:main"
+edgelvef-render = "edgelvef.interfaces.cli.render:main"
+
+[tool.setuptools.packages.find]
+include = ["edgelvef*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
