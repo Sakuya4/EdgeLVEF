@@ -1,0 +1,21 @@
+{
+  "name": "M1-A measurement-native temporal baseline",
+  "version": "m1-a-epoch-5",
+  "format": "ONNX",
+  "opset": 17,
+  "parameters": 11386632,
+  "estimated_gmac": 2.7658,
+  "input": ["batch", 3, 256, 256],
+  "output": ["batch", 8, 256, 256],
+  "measurement_channels": {
+    "IVSd": [0, 1],
+    "LVIDd": [2, 3],
+    "LVIDs": [4, 5],
+    "LVPWd": [6, 7]
+  },
+  "checkpoint_selection": "lowest macro measurement MAE on locked selection subset",
+  "best_epoch": 5,
+  "macro_mae_mm": 1.9359693498161936,
+  "fs_mae": 0.05820386868734219,
+  "official_test_used": false
+}
