@@ -1,0 +1,1 @@
+patient_id,exam_id,recording_id,video_path,fps,crop,fold,label_source,gt_lvef,edv,esv,site,vendor,sex,age_group

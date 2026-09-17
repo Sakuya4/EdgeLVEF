@@ -49,6 +49,21 @@ cd EdgeLVEF
 python -m pip install -e .
 ```
 
+## Validate an EchoXFlow or strong-label dataset
+
+On the workstation that owns the D:\ or E:\ dataset, prepare
+test_config.json from test_config.example.json or answer the two path prompts,
+then run:
+
+~~~powershell
+python test.py
+~~~
+
+The runner performs resume-safe M1-LVEF3 inference when needed, evaluates at
+exam level, audits patient/exam fold leakage and subgroup bias, and produces a
+de-identified ZIP that can be returned for analysis. Original videos are not
+copied. See
+[dataset validation instructions](docs/verification/lvef-dataset-validation.md).
 ## Analyze one PLAX cine
 
 Use a PLAX-compatible cine containing at least one full cardiac cycle:

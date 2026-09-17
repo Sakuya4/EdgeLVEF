@@ -1,0 +1,20 @@
+{
+  "manifest": "D:/EchoXFlow/strong_manifest.csv",
+  "output_root": "E:/EdgeLVEF_results",
+  "provider": "CPUExecutionProvider",
+  "default_fps": 50.0,
+  "bootstrap": 2000,
+  "seed": 20260917,
+  "low_ef_definition": 40.0,
+  "alert_ef_threshold": 40.0,
+  "probability_threshold": 0.5,
+  "require_patient_id": true,
+  "group_columns": [
+    "label_source",
+    "site",
+    "vendor",
+    "sex",
+    "age_group"
+  ],
+  "run_inference": "auto"
+}

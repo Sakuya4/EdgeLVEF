@@ -1,0 +1,48 @@
+{
+  "reviewed_commit": "fd7833f",
+  "source_sha256": "a713c83f4523c4bb60e225473833703d18f10b8bdd7efbb1b859ae9343676fa1",
+  "method": "calibration math audit only; no model inference or training",
+  "formula_matches_actual_class": true,
+  "checked_ratios": 1001,
+  "max_abs_formula_difference": 2.7533531010703882e-14,
+  "monotonic_nonincreasing": true,
+  "ratio_scale_invariance": true,
+  "invalid_inputs_rejected": [
+    "(0, 1)",
+    "(50, -1)",
+    "(50, 50)",
+    "(50, 5)",
+    "(nan, 10)",
+    "(50, inf)"
+  ],
+  "current_released_fit_max_lvef": 59.58002607821817,
+  "r_zero_limit_not_permitted_input": 59.71515027537401,
+  "ef_examples": {
+    "0.2": 59.58002607821817,
+    "0.3267176811": 58.84726041639533,
+    "0.5": 55.362256911952414,
+    "0.7": 44.13581102119813,
+    "0.8072172366": 32.9790412348329,
+    "0.9": 19.33517442796684
+  },
+  "ratio_for_ef_40": 0.7448689203454695,
+  "reported_confusion_matrix_not_recomputed_predictions": {
+    "TP": 9,
+    "FN": 9,
+    "TN": 145,
+    "FP": 1
+  },
+  "derived_from_reported_counts": {
+    "accuracy": 0.9390243902439024,
+    "balanced_accuracy": 0.7465753424657534,
+    "PPV": 0.9,
+    "NPV": 0.9415584415584416,
+    "F1": 0.6428571428571429,
+    "low_ef_prevalence": 0.10975609756097561,
+    "all_negative_accuracy": 0.8902439024390244
+  },
+  "measured_prediction_accuracy": null,
+  "formal_training_started": false,
+  "student_distillation_started": false,
+  "existing_targeted_tests_passed": 2
+}

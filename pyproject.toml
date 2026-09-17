@@ -18,6 +18,8 @@ dependencies = [
 [project.scripts]
 edgelvef-analyze = "edgelvef.interfaces.cli.analyze:main"
 edgelvef-benchmark = "edgelvef.interfaces.cli.benchmark:main"
+edgelvef-evaluate-lvef = "edgelvef.interfaces.cli.evaluate_lvef:main"
+edgelvef-batch-lvef3 = "edgelvef.interfaces.cli.batch_lvef3:main"
 edgelvef-render = "edgelvef.interfaces.cli.render:main"
 
 [tool.setuptools.packages.find]

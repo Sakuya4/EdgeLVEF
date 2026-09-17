@@ -10,3 +10,4 @@ outputs/
 *.avi
 *.mov
 *.npz
+test_config.json
