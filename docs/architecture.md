@@ -12,6 +12,12 @@ interfaces/cli
 
 infrastructure/onnx_wall_model
     implements WallProbabilityModel
+
+interfaces/scripts/run_m1_lvef3
+    -> application/analyze_lvid_cine
+        -> domain/interpretable_lvef
+        -> application/ports.LvidTrajectoryModel
+    -> infrastructure/onnx_lvid_tracker + calibration_config
 ```
 
 ## Layer responsibilities
@@ -28,6 +34,10 @@ infrastructure/onnx_wall_model
 `domain/lvef.py` contains the frozen mapping and low-EF decision rule. It does
 not import OpenCV, ONNX Runtime, PyTorch, or operating-system APIs.
 
+`domain/interpretable_lvef.py` contains the three-parameter monotonic mapping
+from measured LVIDd/LVIDs to the M1-LVEF3 development estimate. It exposes the
+raw ratio and applicability-range check.
+
 ### Application
 
 `application/analyze_cine.py` coordinates one analysis. It accepts a
@@ -41,6 +51,8 @@ or an NPU provider.
 - `video.py`: MP4/AVI/MOV/MKV/NPZ decoding.
 - `head_config.py`: JSON configuration adapter.
 - `benchmark.py`: target-system and latency measurements.
+- `onnx_lvid_tracker.py`: role-invariant LVID endpoint and trajectory adapter.
+- `calibration_config.py`: frozen M1-LVEF3 parameter loader.
 
 ### Interfaces
 

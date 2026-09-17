@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "method": "balanced_generalized_power",
+  "input": "lvid_ratio = LVIDs / LVIDd",
+  "equation": "clip(intercept + scale * 100 * (1 - lvid_ratio ** exponent), 0, 100)",
+  "parameters": {
+    "intercept": -0.4811717786895113,
+    "scale": 0.6019632205406352,
+    "exponent": 3.7896287594651
+  },
+  "low_ef_definition_percent": 40.0,
+  "applicability": {
+    "lvid_ratio_p01": 0.32671768113792937,
+    "lvid_ratio_p99": 0.8072172365901157,
+    "reference_lvef_min": 25.74951,
+    "reference_lvef_max": 67.061752
+  },
+  "development_source": "EchoXFlow same-exam 3-D mesh-derived LVEF",
+  "warning": "Nested development validation after prior label inspection; requires untouched external PLAX validation."
+}

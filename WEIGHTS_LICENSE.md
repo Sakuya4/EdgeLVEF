@@ -17,3 +17,9 @@ The Student Model was trained from EchoXFlow target-domain data using
 Teacher-generated wall paths. Redistribution or commercial use must also be
 reviewed against the upstream Teacher/model terms; this repository does not
 grant rights beyond those upstream terms.
+
+The M1-LVEF3 tracker was trained from EchoNet-LVH measurement annotations and
+initialized from the M1 measurement Student. Its scalar calibration was fitted
+on EchoXFlow development labels. Users must separately review and comply with
+the upstream dataset and pretrained-weight terms; this repository does not
+expand those rights.

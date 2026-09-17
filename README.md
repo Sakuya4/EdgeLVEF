@@ -6,7 +6,26 @@ experimental low-LVEF screening on edge hardware.
 > Research use only. This repository is not a medical device and must not be
 > used to diagnose or treat patients.
 
-## Current deployment candidate
+## Current interpretable LVEF candidate
+
+M1-LVEF3 is the current PLAX-only development candidate:
+
+- role-invariant ShuffleNetV2 LVID tracker, 978,214 parameters;
+- FP32 ONNX, approximately 3.85 MiB;
+- explicit ED/ES, LVIDd, LVIDs and `LVIDs/LVIDd` outputs;
+- three-parameter monotonic LVEF calibration;
+- nested development MAE 5.24 percentage points and low-EF F1 0.643.
+
+Run it with:
+
+```bash
+python scripts/run_m1_lvef3.py path/to/plax_cine.mp4 --fps 50
+```
+
+See [M1-LVEF3 model card](docs/models/m1-lvef3.md). Its calibration has not
+been confirmed on an untouched external PLAX cohort.
+
+## Previous wall-motion deployment candidate
 
 The primary deployment path is the **Student Model**:
 
@@ -75,6 +94,7 @@ Detailed instructions:
 - [Result template](docs/verification/report-template.md)
 - [Validation roadmap](docs/verification/validation-roadmap.md)
 - [Student Model card](docs/models/student-model.md)
+- [M1-LVEF3 model card](docs/models/m1-lvef3.md)
 
 ## Repository boundaries
 

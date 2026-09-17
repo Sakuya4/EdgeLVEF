@@ -1,0 +1,21 @@
+{
+  "file": "m1_lvid_tracker_fp32.onnx",
+  "sha256": "CC95301A37A131F3926EA85A2FAB7A86DDED13C5DD2501F21FEEAB4D213C6B42",
+  "bytes": 4033257,
+  "parameters": 978214,
+  "opset": 17,
+  "input": [
+    "batch",
+    3,
+    256,
+    256
+  ],
+  "output": [
+    "batch",
+    2,
+    256,
+    256
+  ],
+  "max_absolute_logit_difference": 1.52587890625e-05,
+  "mean_absolute_logit_difference": 3.257184289395809e-06
+}
