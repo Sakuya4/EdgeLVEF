@@ -117,6 +117,27 @@ framebuffer as `/dev/fb0` (`ili9486drmfb`), and XPT2046 as
 `/dev/input/event1`. Card and event numbers are discovery-based and may change
 if other devices are enabled.
 
+### UI sizing on the 480 x 320 panel
+
+This panel has only one native mode and the ILI9486 DRM driver cannot expose a
+larger virtual mode. The supplied configuration therefore keeps Weston at
+`480x320`, explicitly uses compositor scale 1, and scales Qt/GTK clients to
+75%. The terminal launcher uses a 9-pixel font and opens maximized.
+
+If a custom application is still too large, adjust `QT_SCALE_FACTOR` and
+`GDK_DPI_SCALE` together in `10-lcd35.conf`. Values from `0.65` to `1.0` are
+reasonable; lower values make application controls and text smaller. Rebuild
+the package or edit the installed systemd drop-in, then run:
+
+```sh
+systemctl daemon-reload
+systemctl restart weston
+```
+
+Application layouts should still be responsive at a logical viewport near
+640 x 426. A fixed 800 x 480 or desktop-sized window cannot be made fully
+visible solely by changing the LCD driver.
+
 From Windows, a command can also be run over COM3:
 
 ```powershell
