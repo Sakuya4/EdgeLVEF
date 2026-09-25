@@ -101,6 +101,12 @@ The JSON result records the model checksum, operating system, architecture,
 active ONNX provider, median/p95 latency, output shape, and finite-output check.
 Do not label CPU fallback as NPU execution.
 
+The tested FRDM-i.MX93 support for the 3.5-inch RPi SPI LCD and XPT2046 touch
+controller is under
+[`hardware/imx93-rpi-lcd35`](hardware/imx93-rpi-lcd35/README.md). It includes
+the Yocto layer, device-tree patch, Weston configuration, COM3 utilities, and
+rollback procedure.
+
 Detailed instructions:
 
 - [Architecture](docs/architecture.md)
@@ -122,6 +128,7 @@ models/                  Frozen deployable artifacts and checksums
 scripts/                 Thin operator scripts; no model logic
 tests/                   Unit and ONNX integration tests
 docs/                    Architecture and verification procedures
+hardware/                Board-specific integration and diagnostic files
 checkpoints/student_v4   Legacy research baseline
 ```
 

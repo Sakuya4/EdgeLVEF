@@ -1,0 +1,128 @@
+From: Codex <codex@openai.com>
+Date: Thu, 24 Sep 2026 00:00:00 +0800
+Subject: [PATCH] arm64: dts: imx93-frdm: add 3.5 inch SPI LCD and touch
+
+Add a separate, rollback-safe board DTB for a Raspberry Pi-compatible
+480x320 ILI9486 display with an XPT2046 touch controller on P11. Enable
+the upstream DRM and input drivers in the i.MX arm64 defconfig.
+
+GPIO_IO25 is shared with CAN2 in the base board DTS, so disable CAN2 in
+the LCD variant and use the pin as the display reset line.
+
+---
+ arch/arm64/boot/dts/freescale/Makefile        |  3 +-
+ .../freescale/imx93-11x11-frdm-lcd35.dts      | 75 +++++++++++++++++++
+ arch/arm64/configs/imx_v8_defconfig           |  2 +
+ 3 files changed, 78 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm64/boot/dts/freescale/imx93-11x11-frdm-lcd35.dts
+
+diff --git a/arch/arm64/boot/dts/freescale/Makefile b/arch/arm64/boot/dts/freescale/Makefile
+--- a/arch/arm64/boot/dts/freescale/Makefile
++++ b/arch/arm64/boot/dts/freescale/Makefile
+@@ -390,5 +390,6 @@ dtb-$(CONFIG_ARCH_MXC) += imx93-11x11-evk.dtb \
+ 			  imx93-11x11-frdm-aud-hat.dtb imx93-11x11-frdm-ov5640.dtb \
+ 			  imx93-11x11-frdm-ld.dtb imx93-11x11-frdm-8mic.dtb \
+-			  imx93-11x11-frdm-lpuart.dtb \
++			  imx93-11x11-frdm-lpuart.dtb \
++			  imx93-11x11-frdm-lcd35.dtb
+ 
+ dtb-$(CONFIG_ARCH_MXC) += imx91-11x11-evk.dtb \
+diff --git a/arch/arm64/boot/dts/freescale/imx93-11x11-frdm-lcd35.dts b/arch/arm64/boot/dts/freescale/imx93-11x11-frdm-lcd35.dts
+new file mode 100644
+--- /dev/null
++++ b/arch/arm64/boot/dts/freescale/imx93-11x11-frdm-lcd35.dts
+@@ -0,0 +1,75 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * FRDM-i.MX93 with a Raspberry Pi-compatible 3.5 inch 480x320 SPI LCD
++ * and XPT2046 resistive touch controller on the P11 header.
++ */
++
++#include "imx93-11x11-frdm.dts"
++
++/ {
++	model = "NXP i.MX93 11X11 FRDM with 3.5 inch SPI LCD";
++
++	reg_lcd35_3v3: regulator-lcd35-3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "lcd35-3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++	};
++};
++
++/* GPIO_IO25 is the LCD reset line, so CAN2 cannot share this pin. */
++&flexcan2 {
++	status = "disabled";
++};
++
++&iomuxc {
++	pinctrl_lcd35_gpio: lcd35gpiogrp {
++		fsl,pins = <
++			MX93_PAD_GPIO_IO07__GPIO2_IO07	0x31e /* touch CS */
++			MX93_PAD_GPIO_IO17__GPIO2_IO17	0x31e /* touch IRQ */
++			MX93_PAD_GPIO_IO24__GPIO2_IO24	0x31e /* LCD D/C */
++			MX93_PAD_GPIO_IO25__GPIO2_IO25	0x31e /* LCD reset */
++		>;
++	};
++};
++
++&lpspi3 {
++	/* Large RGB565 updates time out through eDMA on this controller. */
++	/delete-property/ dmas;
++	/delete-property/ dma-names;
++	fsl,spi-num-chipselects = <2>;
++	pinctrl-0 = <&pinctrl_lpspi3 &pinctrl_lcd35_gpio>;
++	pinctrl-1 = <&pinctrl_lpspi3 &pinctrl_lcd35_gpio>;
++	cs-gpios = <&gpio2 8 GPIO_ACTIVE_LOW>,
++		   <&gpio2 7 GPIO_ACTIVE_LOW>;
++
++	touchscreen@1 {
++		compatible = "ti,ads7846";
++		reg = <1>;
++		vcc-supply = <&reg_lcd35_3v3>;
++		spi-max-frequency = <2000000>;
++
++		interrupt-parent = <&gpio2>;
++		interrupts = <17 IRQ_TYPE_EDGE_FALLING>;
++		pendown-gpios = <&gpio2 17 GPIO_ACTIVE_LOW>;
++
++		ti,x-plate-ohms = /bits/ 16 <60>;
++		ti,pressure-max = /bits/ 16 <255>;
++		ti,debounce-max = /bits/ 16 <10>;
++		ti,debounce-tol = /bits/ 16 <30>;
++		ti,debounce-rep = /bits/ 16 <1>;
++		touchscreen-size-x = <4096>;
++		touchscreen-size-y = <4096>;
++	};
++};
++
++/* Reuse the existing CS0 node and bind it to the upstream ILI9486 DRM driver. */
++&spidev0 {
++	compatible = "waveshare,rpi-lcd-35";
++	spi-max-frequency = <16000000>;
++	dc-gpios = <&gpio2 24 GPIO_ACTIVE_HIGH>;
++	reset-gpios = <&gpio2 25 GPIO_ACTIVE_HIGH>;
++	rotation = <0>;
++	status = "okay";
++};
+diff --git a/arch/arm64/configs/imx_v8_defconfig b/arch/arm64/configs/imx_v8_defconfig
+--- a/arch/arm64/configs/imx_v8_defconfig
++++ b/arch/arm64/configs/imx_v8_defconfig
+@@ -393,5 +393,6 @@ CONFIG_KEYBOARD_IMX_SC_KEY=y
+ CONFIG_KEYBOARD_CROS_EC=y
+ CONFIG_INPUT_TOUCHSCREEN=y
++CONFIG_TOUCHSCREEN_ADS7846=y
+ CONFIG_TOUCHSCREEN_ATMEL_MXT=m
+ CONFIG_TOUCHSCREEN_EXC3000=y
+ CONFIG_TOUCHSCREEN_GOODIX=y
+@@ -625,5 +626,6 @@ CONFIG_IMX8MM_LCDIF_CORE=y
+ CONFIG_IMX_LCDIFV3_CORE=y
+ CONFIG_DRM=y
++CONFIG_TINYDRM_ILI9486=y
+ CONFIG_DRM_I2C_NXP_TDA998X=m
+ CONFIG_DRM_MALI_DISPLAY=m
+ CONFIG_DRM_NOUVEAU=m
+--
+2.51.0.windows.1

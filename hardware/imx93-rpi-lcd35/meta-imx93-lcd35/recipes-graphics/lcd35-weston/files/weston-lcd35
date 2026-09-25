@@ -1,0 +1,24 @@
+#!/bin/sh
+set -eu
+
+card=""
+for path in /sys/bus/spi/drivers/ili9486/*/drm/card*; do
+	if [ -e "$path" ]; then
+		card=${path##*/}
+		break
+	fi
+done
+
+if [ -z "$card" ]; then
+	echo "ILI9486 DRM card not found; using Weston's default DRM device" >&2
+	exec /usr/bin/weston \
+		--log="${XDG_RUNTIME_DIR}/weston.log" \
+		--modules=systemd-notify.so
+fi
+
+exec /usr/bin/weston \
+	--log="${XDG_RUNTIME_DIR}/weston.log" \
+	--modules=systemd-notify.so \
+	--config=weston-lcd35.ini \
+	--renderer=pixman \
+	--drm-device="$card"
