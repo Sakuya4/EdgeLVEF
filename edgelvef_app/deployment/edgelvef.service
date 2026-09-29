@@ -1,0 +1,20 @@
+[Unit]
+Description=EdgeLVEF 480x320 Instrument UI
+After=weston.service graphical.target
+Wants=graphical.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/edgelvef_app
+Environment=XDG_RUNTIME_DIR=/run/user/0
+Environment=DISPLAY=:0
+Environment=GDK_BACKEND=x11
+ExecStart=/opt/edgelvef_app/run.sh
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical.target

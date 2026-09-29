@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=EdgeLVEF
+Comment=EdgeLVEF Ultrasound Application
+Exec=/opt/edgelvef_app/run.sh
+Path=/opt/edgelvef_app
+Icon=/opt/edgelvef_app/assets/edgelvef.png
+Terminal=false
+Categories=Utility;
+StartupNotify=false

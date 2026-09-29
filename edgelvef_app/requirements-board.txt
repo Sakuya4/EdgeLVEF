@@ -1,0 +1,6 @@
+# These are expected to be supplied by the NXP demo image / EdgeLVEF install.
+# PyGObject is normally installed by the OS package manager, not pip.
+numpy
+opencv-python
+onnxruntime==1.17.1
+
