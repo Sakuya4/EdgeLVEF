@@ -1,0 +1,24 @@
+{
+  "weights_included": false,
+  "redistribution": "credentialed PhysioNet channel only",
+  "artifacts": [
+    {
+      "role": "teacher_seed_batch16",
+      "filename": "teacher_batch16_best.pt",
+      "bytes": 125372166,
+      "sha256": "FC09911D070FDA040835E57324DBE02E66A41315570C6BF695C5EB54AA05C0F9"
+    },
+    {
+      "role": "teacher_seed_batch32",
+      "filename": "teacher_batch32_best.pt",
+      "bytes": 125372166,
+      "sha256": "9455B43DC3AD5EBBCF91FD539CA4BD5C41FFFAD02CCE6B6BC239CB9D01CC31EE"
+    },
+    {
+      "role": "edge_student_m5e",
+      "filename": "student_m5e_best.pt",
+      "bytes": 5129322,
+      "sha256": "FEE1A598DAF6E5767380CFCB07AD666B304D7C20CA1E83437BB45D7085F6E01C"
+    }
+  ]
+}

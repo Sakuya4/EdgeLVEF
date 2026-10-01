@@ -65,3 +65,12 @@ Board validation must use the files under `models/student_model/` without
 editing them. Any retraining, threshold selection, quantization, or graph
 conversion creates a new model version and requires a new model card, checksum,
 and validation report.
+
+## M5 research-only Teacher/Student path
+
+`edgelvef/research/m5_teacher_student.py` contains the PyTorch definitions for
+the M5 R(2+1)D Teacher and MobileNetV3-Small+TSM Student. This module is kept
+outside the Clean Architecture inference path: it is research/training code,
+not an application or infrastructure adapter. The deployment path will consume
+an exported, separately validated Student artifact only after INT8 and physical
+i.MX93 gates pass.

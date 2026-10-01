@@ -1,0 +1,34 @@
+{
+  "evidence": "patient-disjoint MIMIC development split with report-linked weak LVEF",
+  "test_studies": 82,
+  "low_ef_studies": 33,
+  "teacher": {
+    "parameters_per_seed": 31300638,
+    "mae_percentage_points": 5.634563,
+    "low_ef_mae_percentage_points": 4.223940,
+    "pearson": 0.848297,
+    "ccc": 0.805266,
+    "auroc": 0.991960,
+    "auprc": 0.988494,
+    "screening_f1": 0.927536,
+    "literal_low_ef_sensitivity": 0.757576,
+    "literal_low_ef_specificity": 1.0
+  },
+  "student_m5e": {
+    "parameters": 1118275,
+    "mae_percentage_points": 6.645458,
+    "median_absolute_error_percentage_points": 4.838597,
+    "mape_percent": 14.225314,
+    "within_5_percentage_points_rate": 0.512195,
+    "within_10_percentage_points_rate": 0.756098,
+    "low_ef_mae_percentage_points": 6.011546,
+    "bias_percentage_points": -1.304025,
+    "pearson": 0.739073,
+    "ccc": 0.678121,
+    "auroc": 0.937539,
+    "auprc": 0.926517,
+    "screening_f1": 0.810811,
+    "literal_low_ef_sensitivity": 0.606061,
+    "literal_low_ef_specificity": 1.0
+  }
+}

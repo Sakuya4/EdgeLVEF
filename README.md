@@ -6,6 +6,23 @@ experimental low-LVEF screening on edge hardware.
 > Research use only. This repository is not a medical device and must not be
 > used to diagnose or treat patients.
 
+## M5 video Teacher and edge Student
+
+The current direct-video research line uses a two-seed R(2+1)D-18 Teacher and a
+1.118M-parameter MobileNetV3-Small+TSM Student. On a fixed patient-disjoint
+82-study MIMIC development test, the Teacher reached LVEF MAE 5.63 percentage
+points and the Student reached 6.65 points, AUROC 0.938 and screening F1 0.811.
+The Student is the current lightweight direct-video research baseline; it is
+not yet the default board runtime artifact.
+
+- [M5 model card](docs/models/m5-teacher-student.md)
+- [Aggregate M5 results](docs/research/m5_teacher_student_results.json)
+- [Restricted artifact hashes](models/m5_teacher_student/artifact_manifest.json)
+
+M5 weights are excluded from public GitHub because they were derived from
+credentialed MIMIC-IV-ECHO data. Architecture code is available under
+`edgelvef/research/`.
+
 ## Current interpretable LVEF candidate
 
 M1-LVEF3 is the current PLAX-only development candidate:

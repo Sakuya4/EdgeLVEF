@@ -23,3 +23,9 @@ initialized from the M1 measurement Student. Its scalar calibration was fitted
 on EchoXFlow development labels. Users must separately review and comply with
 the upstream dataset and pretrained-weight terms; this repository does not
 expand those rights.
+
+M5-A Teacher and M5-E Student weights are not distributed in this repository.
+They were trained from credentialed MIMIC-IV-ECHO data. PhysioNet guidance
+states that derived datasets and models are sensitive resources and should be
+shared through PhysioNet under the same agreement as the source data. Public
+files are limited to architecture code, aggregate results and artifact hashes.

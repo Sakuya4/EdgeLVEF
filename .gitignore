@@ -11,3 +11,7 @@ outputs/
 *.mov
 *.npz
 test_config.json
+models/m5_teacher_student/*.pt
+models/m5_teacher_student/*.pth
+models/m5_teacher_student/*.onnx
+models/m5_teacher_student/*predictions*.csv
