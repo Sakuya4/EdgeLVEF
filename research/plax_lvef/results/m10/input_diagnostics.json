@@ -1,0 +1,20 @@
+{
+  "test": {
+    "cines": 487,
+    "anatomy_anchor_rate": 0.9425051334702259,
+    "cycle_proposal_rate": 0.5154004106776181
+  },
+  "train": {
+    "cines": 2115,
+    "anatomy_anchor_rate": 0.9380614657210402,
+    "cycle_proposal_rate": 0.5342789598108747
+  },
+  "validation": {
+    "cines": 442,
+    "anatomy_anchor_rate": 0.9321266968325792,
+    "cycle_proposal_rate": 0.5316742081447964
+  },
+  "appearance_parameters": 3212755,
+  "locator_parameters": 11386632,
+  "input_gate_passed": true
+}

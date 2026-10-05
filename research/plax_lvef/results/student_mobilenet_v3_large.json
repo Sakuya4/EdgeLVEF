@@ -1,0 +1,56 @@
+{
+  "status": "complete",
+  "evidence": "single patient-disjoint MIMIC development split with report-linked weak LVEF",
+  "student": "mobilenet_v3_large_tsm",
+  "epochs_completed": 25,
+  "best_epoch": 18,
+  "parameter_count": 3212755,
+  "validation_selected_threshold": 0.44319532811641693,
+  "test": {
+    "studies": 82,
+    "low_ef_n": 33,
+    "mae": 5.471303710803882,
+    "rmse": 7.153044088050154,
+    "bias": -0.8897995947046442,
+    "pearson": 0.8354741197864083,
+    "ccc": 0.8182608518382388,
+    "low_ef_mae": 5.276828208835525,
+    "auroc": 0.9635126777983921,
+    "auprc": 0.9561561892916193,
+    "sensitivity": 0.8181818181818182,
+    "specificity": 0.9795918367346939,
+    "precision": 0.9642857142857143,
+    "npv": 0.8888888888888888,
+    "f1": 0.8852459016393442,
+    "threshold": 0.44319532811641693
+  },
+  "literal_lvef_le40": {
+    "tp": 24,
+    "tn": 49,
+    "fp": 0,
+    "fn": 9,
+    "accuracy": 0.8902439024390244,
+    "precision": 1.0,
+    "sensitivity": 0.7272727272727273,
+    "specificity": 1.0,
+    "f1": 0.8421052631578948
+  },
+  "lvef_error": {
+    "mae_percentage_points": 5.471303710803882,
+    "median_absolute_error_percentage_points": 4.207445812225341,
+    "mape_percent": 11.830527914586524,
+    "within_5_percentage_points_rate": 0.6341463414634146,
+    "within_10_percentage_points_rate": 0.7804878048780488,
+    "bias_percentage_points": -0.8897995947046442,
+    "bland_altman_lower_95": -14.886478019138664,
+    "bland_altman_upper_95": 13.106878829729375
+  },
+  "locked_gates": {
+    "mae_le_7_1346": true,
+    "auroc_ge_0_9432": true,
+    "literal_sensitivity_ge_0_70": true,
+    "screening_f1_ge_0_80": true,
+    "parameters_lt_5m": true
+  },
+  "passes_float_promotion": true
+}

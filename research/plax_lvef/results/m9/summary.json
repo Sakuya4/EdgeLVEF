@@ -1,0 +1,177 @@
+{
+  "evidence": "Repeatedly inspected internal development; no M9 advancement",
+  "results": {
+    "control": {
+      "variant": "control",
+      "best_epoch": 8,
+      "test": {
+        "studies": 82,
+        "low_ef_n": 33,
+        "mae": 5.388039663595899,
+        "rmse": 7.0212316514138715,
+        "bias": 0.5038456039641592,
+        "pearson": 0.8426061423483795,
+        "ccc": 0.8161778467622015,
+        "low_ef_mae": 5.900662241861395,
+        "auroc": 0.966604823747681,
+        "auprc": 0.9625405058647485,
+        "sensitivity": 0.9090909090909091,
+        "specificity": 0.8775510204081632,
+        "precision": 0.8333333333333334,
+        "npv": 0.9347826086956522,
+        "f1": 0.8695652173913043,
+        "threshold": 0.23317817909022173
+      },
+      "literal": {
+        "tp": 21,
+        "tn": 49,
+        "fp": 0,
+        "fn": 12,
+        "accuracy": 0.8536585365853658,
+        "precision": 1,
+        "sensitivity": 0.6363636363636364,
+        "specificity": 1,
+        "f1": 0.7777777777777778
+      },
+      "errors": {
+        "mae_percentage_points": 5.388039663595899,
+        "median_absolute_error_percentage_points": 4.07284386952718,
+        "mape_percent": 12.142663861830261,
+        "within_5_percentage_points_rate": 0.5853658536585366,
+        "within_10_percentage_points_rate": 0.8048780487804879,
+        "bias_percentage_points": 0.5038456039641592,
+        "bland_altman_lower_95": -13.306759037970782,
+        "bland_altman_upper_95": 14.3144502458991
+      }
+    },
+    "anatomy": {
+      "variant": "anatomy",
+      "best_epoch": 6,
+      "test": {
+        "studies": 82,
+        "low_ef_n": 33,
+        "mae": 5.555614798873392,
+        "rmse": 7.256889003036014,
+        "bias": -0.2713426670263405,
+        "pearson": 0.8282200633011765,
+        "ccc": 0.8060606222950847,
+        "low_ef_mae": 5.587209349507024,
+        "auroc": 0.9505256648113791,
+        "auprc": 0.9458410335603318,
+        "sensitivity": 0.7575757575757576,
+        "specificity": 1,
+        "precision": 1,
+        "npv": 0.8596491228070176,
+        "f1": 0.8620689655172413,
+        "threshold": 0.5086160004138947
+      },
+      "literal": {
+        "tp": 24,
+        "tn": 49,
+        "fp": 0,
+        "fn": 9,
+        "accuracy": 0.8902439024390244,
+        "precision": 1,
+        "sensitivity": 0.7272727272727273,
+        "specificity": 1,
+        "f1": 0.8421052631578948
+      },
+      "errors": {
+        "mae_percentage_points": 5.555614798873392,
+        "median_absolute_error_percentage_points": 4.163031714303155,
+        "mape_percent": 12.190905720998487,
+        "within_5_percentage_points_rate": 0.5975609756097561,
+        "within_10_percentage_points_rate": 0.8292682926829268,
+        "bias_percentage_points": -0.2713426670263405,
+        "bland_altman_lower_95": -14.572367628095659,
+        "bland_altman_upper_95": 14.029682294042978
+      }
+    },
+    "temporal": {
+      "variant": "temporal",
+      "best_epoch": 6,
+      "test": {
+        "studies": 82,
+        "low_ef_n": 33,
+        "mae": 5.61489793108616,
+        "rmse": 7.328731051881377,
+        "bias": -0.7265968208570669,
+        "pearson": 0.825344232113013,
+        "ccc": 0.8069962353683481,
+        "low_ef_mae": 5.492741508012515,
+        "auroc": 0.9591836734693877,
+        "auprc": 0.9530726793676658,
+        "sensitivity": 0.9090909090909091,
+        "specificity": 0.8775510204081632,
+        "precision": 0.8333333333333334,
+        "npv": 0.9347826086956522,
+        "f1": 0.8695652173913043,
+        "threshold": 0.30750684440135956
+      },
+      "literal": {
+        "tp": 24,
+        "tn": 49,
+        "fp": 0,
+        "fn": 9,
+        "accuracy": 0.8902439024390244,
+        "precision": 1,
+        "sensitivity": 0.7272727272727273,
+        "specificity": 1,
+        "f1": 0.8421052631578948
+      },
+      "errors": {
+        "mae_percentage_points": 5.61489793108616,
+        "median_absolute_error_percentage_points": 4.271165030343191,
+        "mape_percent": 12.180268541014346,
+        "within_5_percentage_points_rate": 0.5853658536585366,
+        "within_10_percentage_points_rate": 0.8292682926829268,
+        "bias_percentage_points": -0.7265968208570669,
+        "bland_altman_lower_95": -15.108099750596384,
+        "bland_altman_upper_95": 13.654906108882251
+      }
+    },
+    "combined": {
+      "variant": "combined",
+      "best_epoch": 8,
+      "test": {
+        "studies": 82,
+        "low_ef_n": 33,
+        "mae": 5.618504464919471,
+        "rmse": 7.285915123278865,
+        "bias": 0.4576345724182833,
+        "pearson": 0.827927266387322,
+        "ccc": 0.8018140299182616,
+        "low_ef_mae": 5.8318387644253376,
+        "auroc": 0.9635126777983921,
+        "auprc": 0.9596800300586945,
+        "sensitivity": 0.8181818181818182,
+        "specificity": 0.9183673469387755,
+        "precision": 0.8709677419354839,
+        "npv": 0.8823529411764706,
+        "f1": 0.84375,
+        "threshold": 0.3381501268595457
+      },
+      "literal": {
+        "tp": 22,
+        "tn": 49,
+        "fp": 0,
+        "fn": 11,
+        "accuracy": 0.8658536585365854,
+        "precision": 1,
+        "sensitivity": 0.6666666666666666,
+        "specificity": 1,
+        "f1": 0.8
+      },
+      "errors": {
+        "mae_percentage_points": 5.618504464919471,
+        "median_absolute_error_percentage_points": 4.839538516420308,
+        "mape_percent": 12.5211918767424,
+        "within_5_percentage_points_rate": 0.524390243902439,
+        "within_10_percentage_points_rate": 0.8170731707317073,
+        "bias_percentage_points": 0.4576345724182833,
+        "bland_altman_lower_95": -13.882268350400496,
+        "bland_altman_upper_95": 14.797537495237064
+      }
+    }
+  }
+}

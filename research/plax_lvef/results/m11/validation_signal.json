@@ -1,0 +1,26 @@
+{
+  "training_median_ef": 53.31880066666667,
+  "constant_baseline_validation_mae": 11.964768537776886,
+  "anatomy_validation_mae": 13.377485136925754,
+  "paired_validation_deltas": {
+    "fixed": {
+      "delta_mae": -0.08216832170662125,
+      "ci_lower": -0.1547026003937576,
+      "ci_upper": -0.008251178981857281
+    },
+    "shuffled": {
+      "delta_mae": 0.468299325400404,
+      "ci_lower": -0.11135980136472731,
+      "ci_upper": 0.9920698469423006
+    },
+    "static": {
+      "delta_mae": 0.47699795138302925,
+      "ci_lower": 0.03506810707729969,
+      "ci_upper": 0.8811007830226251
+    }
+  },
+  "predictive_signal": false,
+  "ordered_motion_signal": false,
+  "anatomical_position_signal": false,
+  "automatic_further_training": false
+}

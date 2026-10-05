@@ -157,3 +157,11 @@ continuous mapping had MAE 6.57 percentage points and overestimated the low-EF
 tail. These are internal research results, not external clinical validation.
 
 No patient images or source training data are included.
+
+## Current PLAX LVEF paper package (2026-10-05)
+
+[Method, code and evidence](research/plax_lvef/README.md) documents the selected
+M5-G MobileNetV3-Large Student, six-backbone benchmark and negative M9–M11
+extensions. [LaTeX writing prompt](research/plax_lvef/PAPER_WRITING_PROMPT.md)
+is a ready-to-paste instruction for an independent writing AI. This research
+package does not change the App, probe connection or active runtime weights.
