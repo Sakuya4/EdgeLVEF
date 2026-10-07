@@ -1,0 +1,21 @@
+[Unit]
+Description=On-board Aco Android Sidecar and private License provisioning
+After=local-fs.target systemd-udev-settle.service
+Wants=systemd-udev-settle.service
+Conflicts=edgelvef-ap.service edgelvef-dhcp.service
+StartLimitIntervalSec=300
+StartLimitBurst=3
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/aco-sidecar/sidecar_supervisor.py
+Restart=on-failure
+RestartSec=30
+TimeoutStopSec=30
+KillMode=process
+UMask=0077
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

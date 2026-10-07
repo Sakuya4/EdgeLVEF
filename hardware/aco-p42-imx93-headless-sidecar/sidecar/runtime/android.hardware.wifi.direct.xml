@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Enable the AOSP Wi-Fi Direct framework service in the on-board sidecar. -->
+<permissions>
+    <feature name="android.hardware.wifi.direct" />
+</permissions>

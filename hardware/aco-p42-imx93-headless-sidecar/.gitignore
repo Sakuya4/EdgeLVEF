@@ -1,0 +1,17 @@
+**/__pycache__/
+**/*.pyc
+**/.gradle/
+**/build/
+**/local.properties
+**/*.aar
+**/*.apk
+**/*.jks
+**/*.keystore
+**/*.license
+**/*.pem
+**/*.key
+vendor/
+artifacts/
+logs/
+secrets/
+*.jsonl

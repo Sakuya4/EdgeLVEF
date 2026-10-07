@@ -6,6 +6,14 @@ experimental low-LVEF screening on edge hardware.
 > Research use only. This repository is not a medical device and must not be
 > used to diagnose or treat patients.
 
+## Aco P42 on-board probe integration
+
+[FRDM-i.MX93 headless Android Sidecar snapshot](hardware/aco-p42-imx93-headless-sidecar/)
+contains board-only probe acquisition, local IPC, Linux UI integration and
+stress-test tooling. Live acquisition and automatic connection were observed;
+reliability and inference acceptance remain incomplete. No phone relay,
+proprietary SDK binary, License or ultrasound recordings are included.
+
 ## M5 video Teacher and edge Student
 
 The current direct-video research line uses a two-seed R(2+1)D-18 Teacher and a
