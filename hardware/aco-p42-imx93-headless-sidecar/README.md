@@ -20,6 +20,9 @@ Aco P42 (Wi-Fi Direct group owner)
 - 板內 ARM64 Android、Binder、IW612 Wi-Fi Direct、合法 SDK License IPC 已串接。
 - Linux App 已實際接收／解碼／顯示 P42 影像，觀察約 6–7 FPS。
 - systemd 監督開機啟動、程式退出後重新啟動與重新送入板上私密 License。
+- 2026-10-07 重連優化將固定 30 秒節流改為 2 秒退避／20 秒總逾時，並以
+  socket identity 修正同 PID Service 重啟後的 License 重送；受控上板測試約
+  13–17 秒恢復串流，詳見 [RECONNECT_OPTIMIZATION_20261007.md](RECONNECT_OPTIMIZATION_20261007.md)。
 - 自動握手成功紀錄包含通道 161 與 48；通道 161 的單一統計不能代表所有握手。
 - 曾在約 282 秒／1,985 張與 214 秒／861 張後停止傳輸。不是穩定性通過。
 - 已觀察群組斷線在先，約 45–60 秒後 Android 出現未處理的網路例外
@@ -39,6 +42,8 @@ Aco P42 (Wi-Fi Direct group owner)
 - `tools/`：COM3 部署、私密 License 匯入、核心／驅動重建工具。
 - `kernel/config.aco-sidecar`：已使用的核心設定；不附核心或模組二進位檔。
 - [REPRODUCIBILITY.md](REPRODUCIBILITY.md)：環境、建置依賴與部署注意事項。
+- [RECONNECT_OPTIMIZATION_20261007.md](RECONNECT_OPTIMIZATION_20261007.md)：
+  重連狀態機、失敗實驗、雜湊與實機時序。
 
 ## 私密與第三方檔案
 

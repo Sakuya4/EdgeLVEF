@@ -63,27 +63,41 @@ def deliver():
         payload[:] = b'\0' * len(payload)
 
 
-def supervise_app(provisioned_pid):
+def license_endpoint(pid):
+    try:
+        info = os.stat('/run/aco-ipc/license.sock', follow_symlinks=False)
+    except OSError:
+        return None
+    if not stat.S_ISSOCK(info.st_mode):
+        return None
+    # A Service restart can recreate the private socket without changing the
+    # Android process PID. Include the socket identity so that restart receives
+    # the License once, while an unchanged endpoint is never reprovisioned.
+    return pid, info.st_dev, info.st_ino
+
+
+def supervise_app(provisioned_endpoint):
     # A diagnostic replay owns this lock only while its process is alive.
     # The kernel releases it even if the replay crashes; no permanent pause.
     with open('/run/aco-ipc/manual-control.lock', 'a') as control:
         try:
             fcntl.flock(control, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
-            return provisioned_pid
+            return provisioned_endpoint
         pid = android('pidof', PACKAGE).stdout.strip()
         if not pid:
             android('am', 'start-foreground-service', '-n', PACKAGE + '/.AcoSidecarService')
             stop.wait(3)
             pid = android('pidof', PACKAGE).stdout.strip()
-        if pid and pid != provisioned_pid:
+        endpoint = license_endpoint(pid) if pid else None
+        if endpoint and endpoint != provisioned_endpoint:
             try:
                 deliver()
-                provisioned_pid = pid
+                provisioned_endpoint = endpoint
                 print('SIDECAR_LICENSE_IPC_READY: contents withheld', flush=True)
             except (OSError, ValueError):
                 print('SIDECAR_LICENSE_WAITING: private file/socket not ready', flush=True)
-        return provisioned_pid
+        return provisioned_endpoint
 
 
 def main():
@@ -121,12 +135,12 @@ def main():
         android('cmd', 'location', 'set-location-enabled', 'true')
         android('svc', 'wifi', 'enable')
         print('SIDECAR_ANDROID_READY: on-board only', flush=True)
-        provisioned_pid = None
+        provisioned_endpoint = None
         while not stop.is_set():
             current = state()
             if not current or current['status'] != 'running':
                 raise RuntimeError('RUNTIME_EXIT')
-            provisioned_pid = supervise_app(provisioned_pid)
+            provisioned_endpoint = supervise_app(provisioned_endpoint)
             stop.wait(10)
         return 0
     except Exception as error:

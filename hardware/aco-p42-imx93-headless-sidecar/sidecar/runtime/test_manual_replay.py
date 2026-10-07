@@ -24,7 +24,8 @@ class ReplaySafetyTests(unittest.TestCase):
             with patch('builtins.open', side_effect=lambda *_: builtin_open(fixture.name, 'a')), \
                     patch.object(supervisor, 'android') as android, \
                     patch.object(supervisor, 'deliver') as deliver:
-                self.assertEqual(supervisor.supervise_app(b'123'), b'123')
+                endpoint = (b'123', 1, 2)
+                self.assertEqual(supervisor.supervise_app(endpoint), endpoint)
                 android.assert_not_called()
                 deliver.assert_not_called()
 
@@ -33,9 +34,33 @@ class ReplaySafetyTests(unittest.TestCase):
             builtin_open = open
             with patch('builtins.open', side_effect=lambda *_: builtin_open(fixture.name, 'a')), \
                     patch.object(supervisor, 'android', return_value=SimpleNamespace(stdout=b'456')), \
+                    patch.object(supervisor, 'license_endpoint', return_value=(b'456', 1, 3)), \
                     patch.object(supervisor, 'deliver') as deliver:
-                self.assertEqual(supervisor.supervise_app(b'123'), b'456')
+                self.assertEqual(supervisor.supervise_app((b'123', 1, 2)), (b'456', 1, 3))
                 deliver.assert_called_once()
+
+    def test_same_pid_new_socket_is_reprovisioned_once(self):
+        with tempfile.NamedTemporaryFile() as fixture:
+            builtin_open = open
+            old_endpoint = (b'456', 1, 2)
+            new_endpoint = (b'456', 1, 3)
+            with patch('builtins.open', side_effect=lambda *_: builtin_open(fixture.name, 'a')), \
+                    patch.object(supervisor, 'android', return_value=SimpleNamespace(stdout=b'456')), \
+                    patch.object(supervisor, 'license_endpoint', return_value=new_endpoint), \
+                    patch.object(supervisor, 'deliver') as deliver:
+                self.assertEqual(supervisor.supervise_app(old_endpoint), new_endpoint)
+                deliver.assert_called_once()
+
+    def test_unchanged_socket_is_not_reprovisioned(self):
+        with tempfile.NamedTemporaryFile() as fixture:
+            builtin_open = open
+            endpoint = (b'456', 1, 3)
+            with patch('builtins.open', side_effect=lambda *_: builtin_open(fixture.name, 'a')), \
+                    patch.object(supervisor, 'android', return_value=SimpleNamespace(stdout=b'456')), \
+                    patch.object(supervisor, 'license_endpoint', return_value=endpoint), \
+                    patch.object(supervisor, 'deliver') as deliver:
+                self.assertEqual(supervisor.supervise_app(endpoint), endpoint)
+                deliver.assert_not_called()
 
 
 if __name__ == '__main__':

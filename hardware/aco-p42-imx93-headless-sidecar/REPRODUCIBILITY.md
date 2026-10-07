@@ -48,7 +48,9 @@ package UID。原 Linux AP／DHCP 與另一個 Wi-Fi 管理程式不得同時搶
 （需 NumPy／OpenCV）。這些測試不連探頭、不讀真實 License，不等於上板驗收。
 Python 語法檢查也不代表 Android／HAL／Linux UI 所有路徑已驗證。
 
-2026-10-07 發布前檢查：離線重播安全測試 3 項通過、Python 語法編譯通過、
-PowerShell AST 語法檢查通過、真實 License 實值／數字憑證 literal／受限制產物
-檢查通過。Linux 影像協定測試因本次 WSL 測試環境沒有 OpenCV，未完成執行。
-未重新建置 Android APK 或重新部署板子；先前的上板成功紀錄不等於本次全套測試通過。
+2026-10-07 重連優化檢查：離線 supervisor／重播安全測試 5 項通過，包含
+同 PID、新 `license.sock` 的單次重新佈建；Python 語法編譯通過。Android debug
+APK 使用上述 Gradle／SDK／官方 AAR 成功建置、簽章憑證保持不變，並經 SHA-256
+差分往返驗證後部署。受控完整 Sidecar 與同 PID Service 重啟均在未開關 P42 的
+情況下恢復板內串流。這不等於人體量測斷線或長時間穩定性已通過；細節與界線見
+[RECONNECT_OPTIMIZATION_20261007.md](RECONNECT_OPTIMIZATION_20261007.md)。

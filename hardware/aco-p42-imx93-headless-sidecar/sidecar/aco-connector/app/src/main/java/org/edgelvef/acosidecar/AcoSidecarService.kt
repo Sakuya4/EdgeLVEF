@@ -32,7 +32,7 @@ class AcoSidecarService : Service() {
 
     @Volatile
     private var streaming = false
-    private var nextConnectAt = 0L
+    private var retryConnectAt = 0L
     private var connectingSince = 0L
     private var diagnosticManager: WifiP2pManager? = null
     private var diagnosticChannel: WifiP2pManager.Channel? = null
@@ -42,6 +42,9 @@ class AcoSidecarService : Service() {
             when (acoProbeList.size) {
                 0 -> state("DISCOVERING")
                 1 -> {
+                    // Ignore cached callbacks while the failed SDK session is
+                    // being released, and never replace an attempt in flight.
+                    if (SystemClock.elapsedRealtime() < retryConnectAt || selectedProbe != null) return
                     selectedProbe = acoProbeList.first()
                     observePeerMetadata(selectedProbe!!)
                     selectedProbe?.onErrorListener = { error ->
@@ -62,25 +65,27 @@ class AcoSidecarService : Service() {
     private val pollConnection = object : Runnable {
         override fun run() {
             val probe = selectedProbe
+            val now = SystemClock.elapsedRealtime()
             when {
                 probe == null -> ensureDiscovery()
                 probe.isConnected() && !streaming -> startStreaming(probe)
+                connectingSince != 0L && now - connectingSince >= CONNECT_TIMEOUT_MS -> {
+                    // isConnecting() can remain true until the vendor SDK's much
+                    // longer internal timeout. Bound the whole attempt here so a
+                    // missed Wi-Fi Direct negotiation cannot cost about a minute.
+                    recoverProbe(probe, "CONNECT_TIMEOUT")
+                }
                 probe.isDisconnected() -> {
                     if (streaming) {
-                        streaming = false
-                        frameServer.clear()
-                        selectedProbe = null
-                        connectingSince = 0L
-                        state("DISCONNECTED")
-                        ensureDiscovery()
-                    } else if (connectingSince != 0L && SystemClock.elapsedRealtime() - connectingSince > 5_000L) {
-                        // A failed negotiation invalidates the peer cache. Do
-                        // not reuse that AcoProbe: await a fresh discovery event.
-                        selectedProbe = null
-                        connectingSince = 0L
-                        state("RETRY_DISCOVERY")
-                        ensureDiscovery()
-                    } else connectIfReady()
+                        recoverProbe(probe, "DISCONNECTED")
+                    } else if (
+                        connectingSince != 0L &&
+                        now - connectingSince >= DISCONNECTED_GRACE_MS
+                    ) {
+                        recoverProbe(probe, "CONNECT_FAILED")
+                    } else if (connectingSince == 0L) {
+                        connectIfReady()
+                    }
                 }
             }
             handler.postDelayed(this, CONNECTION_POLL_MS)
@@ -128,8 +133,18 @@ class AcoSidecarService : Service() {
         handler.removeCallbacksAndMessages(null)
         pendingLicense?.fill('\u0000')
         pendingLicense = null
-        selectedProbe?.stop()
-        selectedProbe?.disconnect()
+        selectedProbe?.let { probe ->
+            try {
+                if (streaming) probe.stop()
+            } catch (error: RuntimeException) {
+                Log.e(TAG, "ACO_STOP_ERROR:${error.javaClass.simpleName}")
+            }
+            try {
+                probe.disconnect()
+            } catch (error: RuntimeException) {
+                Log.e(TAG, "ACO_DISCONNECT_ERROR:${error.javaClass.simpleName}")
+            }
+        }
         AcoUltrasound.unregisterProbeDiscoveredListener()
         AcoUltrasound.destroy()
         licenseControl.close()
@@ -172,8 +187,7 @@ class AcoSidecarService : Service() {
         val probe = selectedProbe ?: return
         val licenseChars = pendingLicense ?: return
         if (probe.isConnected() || probe.isConnecting()) return
-        if (SystemClock.elapsedRealtime() < nextConnectAt) return
-        nextConnectAt = SystemClock.elapsedRealtime() + 30_000L
+        if (SystemClock.elapsedRealtime() < retryConnectAt) return
         connectingSince = SystemClock.elapsedRealtime()
 
         // Do not explicitly stop discovery before connect: Android's inactive
@@ -185,6 +199,7 @@ class AcoSidecarService : Service() {
             probe.connect(license)
         } catch (error: RuntimeException) {
             Log.e(TAG, "ACO_CONNECT_ERROR:${error.javaClass.simpleName}")
+            recoverProbe(probe, "CONNECT_FAILED")
         } finally {
             // Retain only the private in-memory CharArray for reconnects;
             // wipe it on replacement/destruction. Never persist/log in Android.
@@ -196,12 +211,61 @@ class AcoSidecarService : Service() {
             Log.e(TAG, "ACO_ERROR:${error.javaClass.simpleName}")
         }
         probe.onStreamingListener = { data -> frameServer.publish(data.bitmap) }
-        probe.streaming()
-        streaming = true
-        state("STREAMING")
+        try {
+            probe.streaming()
+            streaming = true
+            connectingSince = 0L
+            retryConnectAt = 0L
+            state("STREAMING")
+        } catch (error: RuntimeException) {
+            Log.e(TAG, "ACO_STREAM_ERROR:${error.javaClass.simpleName}")
+            recoverProbe(probe, "STREAM_START_FAILED")
+        }
+    }
+
+    private fun recoverProbe(probe: AcoProbe, reason: String) {
+        val wasStreaming = streaming
+        streaming = false
+        frameServer.clear()
+        if (selectedProbe === probe) selectedProbe = null
+        connectingSince = 0L
+        retryConnectAt = SystemClock.elapsedRealtime() + RETRY_BACKOFF_MS
+
+        // Release the official SDK session before accepting a newly discovered
+        // peer. Reusing the failed AcoProbe leaves its network worker and P2P
+        // state alive, which makes a later connection depend on power cycling.
+        if (wasStreaming) {
+            try {
+                probe.stop()
+            } catch (error: RuntimeException) {
+                Log.e(TAG, "ACO_STOP_ERROR:${error.javaClass.simpleName}")
+            }
+        }
+        try {
+            probe.disconnect()
+        } catch (error: RuntimeException) {
+            Log.e(TAG, "ACO_DISCONNECT_ERROR:${error.javaClass.simpleName}")
+        }
+
+        state(reason)
+        handler.postDelayed({ restartDiscovery() }, RETRY_BACKOFF_MS)
+    }
+
+    private fun restartDiscovery() {
+        if (selectedProbe != null) return
+        try {
+            if (AcoUltrasound.isDiscoveringProbes()) {
+                AcoUltrasound.stopDiscoverProbes()
+            }
+            AcoUltrasound.startDiscoverProbes()
+            state("DISCOVERING")
+        } catch (error: RuntimeException) {
+            Log.e(TAG, "ACO_DISCOVERY_ERROR:${error.javaClass.simpleName}")
+        }
     }
 
     private fun ensureDiscovery() {
+        if (SystemClock.elapsedRealtime() < retryConnectAt) return
         if (!AcoUltrasound.isDiscoveringProbes()) {
             AcoUltrasound.startDiscoverProbes()
             state("DISCOVERING")
@@ -253,5 +317,8 @@ class AcoSidecarService : Service() {
         private const val NOTIFICATION_CHANNEL = "aco-sidecar"
         private const val NOTIFICATION_ID = 42
         private const val CONNECTION_POLL_MS = 500L
+        private const val DISCONNECTED_GRACE_MS = 5_000L
+        private const val CONNECT_TIMEOUT_MS = 20_000L
+        private const val RETRY_BACKOFF_MS = 2_000L
     }
 }
