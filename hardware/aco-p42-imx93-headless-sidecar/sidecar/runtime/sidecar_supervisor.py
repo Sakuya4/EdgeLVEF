@@ -141,7 +141,10 @@ def main():
             if not current or current['status'] != 'running':
                 raise RuntimeError('RUNTIME_EXIT')
             provisioned_endpoint = supervise_app(provisioned_endpoint)
-            stop.wait(10)
+            # Keep Service/socket recovery latency bounded. A two-second poll is
+            # inexpensive inside the local Android container and avoids adding
+            # up to ten seconds before a restarted Service receives its License.
+            stop.wait(2)
         return 0
     except Exception as error:
         # Fixed layer identifiers only; never arbitrary exception text.

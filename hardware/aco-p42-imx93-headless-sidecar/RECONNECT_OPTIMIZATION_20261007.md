@@ -109,3 +109,68 @@ restart paths. They do not yet prove recovery from the body-measurement-specific
 radio loss, nor ten-/thirty-minute endurance during real ultrasound use. The
 next test must preserve P42 lamp state and correlate actual body contact with
 RSSI/TX failures, P2P group loss, SDK state, Android PID, and native frame age.
+
+## 2026-10-08 physical reconnect follow-up
+
+Repeated powered-probe and cold-boot tests exposed two additional lifecycle
+problems in the official AAR integration:
+
+- `probe.disconnect()` first launches an HTTP leave-control-room request. When
+  the P2P route is already gone, its uncaught OkHttp coroutine fails with
+  `ENETUNREACH` before Android can cancel the connection or remove the group.
+- `AcoUltrasound.destroy()` calls the connector's `onDestroy()`. After a real
+  streaming session, that method calls the same vendor disconnect path, so a
+  physical probe loss could still crash the process roughly 30 seconds later.
+
+The accepted Sidecar now separates recovery by connection phase:
+
+- It never calls the vendor `disconnect()` after a lost or failed route.
+- A failed negotiation that never owned a live session may rebuild the SDK
+  after serialized `cancelConnect()` and `removeGroup()` cleanup.
+- A physical loss after streaming preserves the initialized SDK and performs
+  in-process `SDK_RECOVERING`, avoiding both `disconnect()` and `destroy()`.
+- A discovered probe receives a five-second settle interval before automatic
+  connection. This replaces the human selection delay present in Aco's sample
+  application and avoids connecting while a cold-starting P42 advertises before
+  its control service is ready.
+- A no-progress provisioning attempt times out after 10 seconds. Once Android
+  reports `P2P_GROUP_FORMED`, the SDK receives up to 20 seconds to finish its
+  control handshake, preventing a valid group from being cut down at second 10.
+- The License socket supervisor poll interval is two seconds instead of ten,
+  bounding recovery delay without exposing or persisting License contents.
+
+### Third cold-boot cycle on the accepted revision
+
+- Streaming before power-off: 23:10:22 board time.
+- Physical loss: `DISCONNECTED` at 23:12:18.579.
+- Safe path: `SDK_RECOVERING` at the same timestamp; Android PID remained 16561.
+- P42 rediscovered: 23:12:27.164, followed by the five-second settle interval.
+- First provisioning attempt made no group and was recovered automatically.
+- Second attempt: `CONNECTING` 23:13:00.061,
+  `P2P_GROUP_FORMED` 23:13:02.567, and `STREAMING` 23:13:05.069.
+- Linux EdgeLVEF resumed `UI_RENDERED` frames at 23:13:07 and returned to about
+  5–7 acquisition FPS.
+- The Linux-visible App PID remained 54659 beyond the previous delayed-crash
+  window, and Android exit history recorded no new crash.
+
+This cycle required one P42 power-off/on as the test stimulus, but no repeated
+manual power cycling to obtain a connection. A failed first negotiation was
+handled automatically and the same Sidecar process restored streaming.
+
+### Accepted deployed artifacts
+
+- Installed APK SHA-256:
+  `4de697a2235d841f5dd5e165b8b825c57b0cab0f07a2fccd7df3e3ea2414df1e`
+- APK signing certificate SHA-256 remains:
+  `ef305db2f80fc9f99aa45856af6e91165423745dbb50a7afddd1faed42eb855e`
+- Deployed supervisor SHA-256:
+  `6754948e4261578b43992b0409c330f41c099c75e3992fb0a248f2d3c77caaf4`
+- Board rollback APK:
+  `/opt/aco-sidecar/apks/aco-sidecar-reconnect-staged-timeout.apk`
+- Accepted board APK:
+  `/opt/aco-sidecar/apks/aco-sidecar-reconnect-inplace-recovery.apk`
+
+The APK build succeeded, all five supervisor replay tests passed, `pm install -r`
+returned `Success`, the installed `base.apk` hash matched exactly, and both
+temporary package-verifier settings were restored to `null` immediately after
+installation. License values and ultrasound frames are absent from this record.
