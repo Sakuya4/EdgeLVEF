@@ -13,6 +13,14 @@ The checkpoints are supplied without warranties and are not approved for
 clinical use. The Python source code has no separate open-source license grant
 unless one is added by the repository owner.
 
+The Readiness Gate under `models/readiness_gate/` is the thesis R1 multi-task
+candidate trained with EchoUNAL view labels and EchoNet-LVH anatomy-derived
+quality/readiness proxy labels. Its dataset attribution is EchoUNAL and
+EchoNet-LVH, rather than EchoXFlow. The existing non-commercial research and
+evaluation terms above apply subject to upstream rights; this repository cannot
+grant rights that the team does not hold. No credentialed MIMIC data or
+foundation Teacher derivatives are included in this R1 artifact.
+
 The Student Model was trained from EchoXFlow target-domain data using
 Teacher-generated wall paths. Redistribution or commercial use must also be
 reviewed against the upstream Teacher/model terms; this repository does not

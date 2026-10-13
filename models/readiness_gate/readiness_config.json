@@ -1,0 +1,10 @@
+{
+  "artifact": "readiness_gate_mobilenetv3_small.onnx",
+  "input": "five consecutive grayscale frames replicated to RGB, 224x224, ImageNet normalized",
+  "outputs": ["view_logits", "readiness_logits", "quality_logits"],
+  "view_labels": ["non-PLAX", "PLAX"],
+  "readiness_labels": ["No View", "LV Visible", "Near PLAX", "Standard PLAX"],
+  "quality_labels": ["usable_image", "lv_visible", "lv_centered", "lv_complete", "plax_proximity"],
+  "development_method": "MobileNetV3-Small R1 multi-task, seed 42 fixed candidate",
+  "evidence_scope": "public-data pseudo-label development; no clinician-rated external readiness validation"
+}

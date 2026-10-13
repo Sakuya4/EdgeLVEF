@@ -14,6 +14,25 @@ stress-test tooling. Live acquisition and automatic connection were observed;
 reliability and inference acceptance remain incomplete. No phone relay,
 proprietary SDK binary, License or ultrasound recordings are included.
 
+## Thesis PLAX Readiness Gate
+
+The existing R1 MobileNetV3-Small Readiness Gate is available separately from
+the LVEF models: 1,077,547 parameters, five-frame input, and view/readiness/quality
+heads. FP32 ONNX and the matching tensor-only PyTorch checkpoint are included.
+It summarizes input conditions; it neither predicts LVEF nor automatically
+blocks the existing LVEF pipeline.
+
+```bash
+python -m pip install -e .
+python -m edgelvef.interfaces.cli.readiness path/to/plax_cine.mp4
+# Equivalent installed command: edgelvef-readiness path/to/plax_cine.mp4
+```
+
+See the [Readiness Gate model card](docs/models/readiness-gate.md),
+[artifacts](models/readiness_gate/) and [original thesis research repository](https://github.com/Sakuya4/PLAX-readiness-gate).
+The included quality/readiness labels are development proxies, not expert
+clinical acceptance labels. NPU/INT8 deployment is not claimed by this export.
+
 ## M5 video Teacher and edge Student
 
 The current direct-video research line uses a two-seed R(2+1)D-18 Teacher and a

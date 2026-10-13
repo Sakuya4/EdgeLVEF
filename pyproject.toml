@@ -21,6 +21,7 @@ edgelvef-benchmark = "edgelvef.interfaces.cli.benchmark:main"
 edgelvef-evaluate-lvef = "edgelvef.interfaces.cli.evaluate_lvef:main"
 edgelvef-batch-lvef3 = "edgelvef.interfaces.cli.batch_lvef3:main"
 edgelvef-render = "edgelvef.interfaces.cli.render:main"
+edgelvef-readiness = "edgelvef.interfaces.cli.readiness:main"
 
 [tool.setuptools.packages.find]
 include = ["edgelvef*"]

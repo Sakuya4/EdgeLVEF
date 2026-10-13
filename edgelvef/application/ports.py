@@ -13,3 +13,8 @@ class WallProbabilityModel(Protocol):
 class LvidTrajectoryModel(Protocol):
     def track(self, grayscale_frames: np.ndarray, fps: float) -> dict[str, np.ndarray | float]:
         """Return the full-cine LVID trajectory and endpoint coordinates."""
+
+
+class ReadinessLogitModel(Protocol):
+    def predict_logits(self, grayscale_frames: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Return view, readiness and quality logits for sampled five-frame windows."""
