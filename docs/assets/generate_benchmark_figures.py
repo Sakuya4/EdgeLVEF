@@ -1,4 +1,5 @@
 """Generate publication figures from the repository's aggregate results."""
+from io import StringIO
 from pathlib import Path
 
 import matplotlib
@@ -17,12 +18,22 @@ plt.rcParams.update({
     "legend.fontsize": 8, "legend.frameon": False,
     "axes.spines.top": False, "axes.spines.right": False,
     "pdf.fonttype": 42, "ps.fonttype": 42, "svg.fonttype": "none",
+    "svg.hashsalt": "edgelvef-publication",
     "savefig.dpi": 300, "savefig.bbox": "tight",
 })
 
 def save(figure, stem):
     for extension in ("png", "pdf", "svg"):
-        figure.savefig(OUTPUT / f"{stem}.{extension}", facecolor="white")
+        target = OUTPUT / f"{stem}.{extension}"
+        if extension == "svg":
+            buffer = StringIO()
+            figure.savefig(buffer, format="svg", facecolor="white", metadata={"Date": None})
+            target.write_text(
+                "\n".join(line.rstrip() for line in buffer.getvalue().splitlines()) + "\n",
+                encoding="utf-8",
+            )
+        else:
+            figure.savefig(target, facecolor="white")
     plt.close(figure)
 
 def backbone_comparison():
