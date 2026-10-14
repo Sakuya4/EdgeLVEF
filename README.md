@@ -1,194 +1,99 @@
 # EdgeLVEF
+## Efficient PLAX Video Analysis for Portable Cardiac Ultrasound
 
-PLAX-only research software for lightweight wall-motion analysis and
-experimental low-LVEF screening on edge hardware.
+[中文介紹](README.zh-TW.md) · [Method](research/plax_lvef/METHOD.md) · [Architecture](docs/architecture.md) · [Results](research/plax_lvef/RESULTS.md) · [Application guide](docs/application.md)
 
-> Research use only. This repository is not a medical device and must not be
-> used to diagnose or treat patients.
+EdgeLVEF estimates left ventricular ejection fraction (LVEF) from parasternal long-axis (PLAX) ultrasound videos using a compact spatiotemporal network. We transfer the predictions and representations of an offline video Teacher ensemble to an edge Student, and connect video analysis with PLAX input-quality assessment and a local Linux application.
 
-## Aco P42 on-board probe integration
+Our goal is to bring cardiac ultrasound analysis closer to patients in home visits, community care and bedside examinations. We focus on a portable workflow in which acquisition, image review and computation can take place on the same device.
 
-[FRDM-i.MX93 headless Android Sidecar snapshot](hardware/aco-p42-imx93-headless-sidecar/)
-contains board-only probe acquisition, local IPC, Linux UI integration and
-stress-test tooling. Live acquisition and automatic connection were observed;
-reliability and inference acceptance remain incomplete. No phone relay,
-proprietary SDK binary, License or ultrasound recordings are included.
+## Research origin and design
 
-## Thesis PLAX Readiness Gate
+Video-based echocardiography models learn from both cardiac appearance and motion [1]. Gao et al. extend EF estimation to PLAX through study-linked supervision and multi-view proxy labeling [2]. Building on this direction, we study how to retain video-level information in a network designed for local computation.
 
-The existing R1 MobileNetV3-Small Readiness Gate is available separately from
-the LVEF models: 1,077,547 parameters, five-frame input, and view/readiness/quality
-heads. FP32 ONNX and the matching tensor-only PyTorch checkpoint are included.
-It summarizes input conditions; it neither predicts LVEF nor automatically
-blocks the existing LVEF pipeline.
+We use R(2+1)D-18 [3] as the offline Teacher architecture. The Student combines MobileNetV3-Large [4], temporal channel exchange inspired by TSM [5], and residual depthwise temporal convolutions. During training, it learns from report-linked EF, Teacher EF, a Teacher-derived low-EF soft target, and feature alignment. At inference, the Student operates independently of the Teacher ensemble.
 
-```bash
-python -m pip install -e .
-python -m edgelvef.interfaces.cli.readiness path/to/plax_cine.mp4
-# Equivalent installed command: edgelvef-readiness path/to/plax_cine.mp4
+## What EdgeLVEF contributes
+
+- **Compact video analysis:** a 3.213M-parameter Student integrates spatial appearance with inter-frame motion.
+- **Multi-signal knowledge transfer:** continuous-output and feature supervision connect the high-capacity Teacher to the edge model.
+- **Controlled backbone comparison:** six Student encoders share the input, temporal module, training objective and evaluation protocol.
+- **PLAX input assessment:** a separate multi-head Readiness Gate summarizes view, readiness and image quality.
+- **Local system design:** authorized P42 acquisition, board-local image transport and the Linux interface provide the system integration path.
+
+## Model architecture
+
+![EdgeLVEF Teacher–Student architecture](docs/assets/edgelvef-architecture.png)
+
+Figure 1. (a) Offline learning combines report, EF, low-EF and feature supervision. (b) The compact Student performs independent video inference; Readiness Gate supplies a separate input assessment.
+
+| Component | Design | Role |
+|---|---|---|
+| Offline Teacher | Two R(2+1)D-18 networks; 64 frames, 112 × 112 | Generate EF and 512-dimensional representation targets |
+| Edge Student | MobileNetV3-Large + TSM + depthwise temporal CNN; 32 frames, 112 × 112 | Estimate continuous LVEF and a low-EF score |
+| Readiness Gate | MobileNetV3-Small; five-frame feature pooling; three output heads | Summarize PLAX view and image conditions |
+| Device application | Linux UI, acquisition adapters and inference services | Display ultrasound and analysis on the portable platform |
+
+The Student projects frame features to 128 channels, processes them with temporal dilations 1, 2 and 4, then combines temporal mean and maximum pooling into a 256-dimensional representation. The training-only feature projector and Teacher networks are excluded from Student inference.
+
+See [the method](research/plax_lvef/METHOD.md) for the loss equations and [the architecture guide](docs/architecture.md) for component interfaces.
+
+## Selected results
+
+The fixed patient-disjoint PLAX development benchmark contains 82 studies, including 33 with report-linked EF ≤ 40%. Eligible cine predictions are averaged within each study.
+
+| Model | Parameters | LVEF MAE (pp) | RMSE (pp) | Pearson r | CCC |
+|---|---:|---:|---:|---:|---:|
+| Teacher ensemble | 62.601M | 5.635 | 7.142 | 0.848 | 0.805 |
+| MobileNetV3-Large Student | 3.213M | 5.471 | 7.153 | 0.835 | 0.818 |
+
+The Student reduces parameter count by 94.87% relative to the two-Teacher ensemble. Here, `pp` means LVEF percentage points. The [results page](research/plax_lvef/RESULTS.md) presents all six backbones, low-EF metrics, error distributions and the separate report-EF reassessment.
+
+![Student model-size and EF-error comparison](docs/assets/student-backbone-comparison.png)
+
+## Portable system
+
+![P42 probe and i.MX93 display assembly](docs/assets/project/probe-board-connection.jpeg)
+
+The physical assembly combines an Aco P42 probe with the i.MX93 board and display. The Linux interface presents the acquired image and EF result fields. The [project gallery](docs/figures.md) includes the original interface, power, circuit, PCB and enclosure figures.
+
+## Explore the repository
+
+| Path | Content |
+|---|---|
+| [research/plax_lvef](research/plax_lvef/) | Teacher and Student architecture, training implementation, aggregate results and references |
+| [docs](docs/README.md) | Project description, model modules and application guide |
+| [edgelvef/research](edgelvef/research/) | Importable Teacher and Student architecture definitions |
+| [edgelvef_app](edgelvef_app/) | Linux device application |
+| [hardware](hardware/) | i.MX93 display, touch and authorized P42 acquisition integration |
+| [tests](tests/) | Software and inference tests |
+
+For an architecture-only check, instantiate the network without pretrained weights:
+
+```python
+import torch
+from edgelvef.research import EdgeLvefStudent
+
+student = EdgeLvefStudent(variant="mobilenet_v3_large", pretrained=False).eval()
+with torch.inference_mode():
+    ef, _, low_ef_logit = student(torch.zeros(1, 32, 1, 112, 112))
+print(ef.shape, low_ef_logit.shape)  # [1], [1]
 ```
 
-See the [Readiness Gate model card](docs/models/readiness-gate.md),
-[artifacts](models/readiness_gate/) and [original thesis research repository](https://github.com/Sakuya4/PLAX-readiness-gate).
-The included quality/readiness labels are development proxies, not expert
-clinical acceptance labels. NPU/INT8 deployment is not claimed by this export.
+Installation, supported commands and device operation are in the [application guide](docs/application.md).
 
-## M5 video Teacher and edge Student
+## Data and licensing
 
-The current direct-video research line uses a two-seed R(2+1)D-18 Teacher and a
-1.118M-parameter MobileNetV3-Small+TSM Student. On a fixed patient-disjoint
-82-study MIMIC development test, the Teacher reached LVEF MAE 5.63 percentage
-points and the Student reached 6.65 points, AUROC 0.938 and screening F1 0.811.
-The Student is the current lightweight direct-video research baseline; it is
-not yet the default board runtime artifact.
+This public method package contains architecture, source code and aggregate statistics. Credentialed images, patient records, per-study predictions and trained LVEF checkpoints remain in access-controlled storage. The P42 SDK and device license are supplied through the manufacturer's authorized channel. See [artifact terms](WEIGHTS_LICENSE.md).
 
-- [M5 model card](docs/models/m5-teacher-student.md)
-- [Aggregate M5 results](docs/research/m5_teacher_student_results.json)
-- [Restricted artifact hashes](models/m5_teacher_student/artifact_manifest.json)
+## References
 
-M5 weights are excluded from public GitHub because they were derived from
-credentialed MIMIC-IV-ECHO data. Architecture code is available under
-`edgelvef/research/`.
+[1] D. Ouyang et al., “Video-based AI for beat-to-beat assessment of cardiac function,” *Nature*, vol. 580, pp. 252–256, 2020, doi: [10.1038/s41586-020-2145-8](https://doi.org/10.1038/s41586-020-2145-8).
 
-## Current interpretable LVEF candidate
+[2] Z. Gao, D. Yurk, and Y. S. Abu-Mostafa, “Learning from Scarce Labels: Multi-View Echocardiography for Ejection Fraction Prediction,” *Machine Learning for Biomedical Imaging*, 2026, doi: [10.59275/j.melba.2026-8194](https://doi.org/10.59275/j.melba.2026-8194).
 
-M1-LVEF3 is the current PLAX-only development candidate:
+[3] D. Tran, H. Wang, L. Torresani, J. Ray, Y. LeCun, and M. Paluri, “A closer look at spatiotemporal convolutions for action recognition,” in *Proc. IEEE/CVF CVPR*, 2018, pp. 6450–6459. [Paper](https://arxiv.org/abs/1711.11248).
 
-- role-invariant ShuffleNetV2 LVID tracker, 978,214 parameters;
-- FP32 ONNX, approximately 3.85 MiB;
-- explicit ED/ES, LVIDd, LVIDs and `LVIDs/LVIDd` outputs;
-- three-parameter monotonic LVEF calibration;
-- nested development MAE 5.24 percentage points and low-EF F1 0.643.
+[4] A. Howard et al., “Searching for MobileNetV3,” in *Proc. IEEE/CVF ICCV*, 2019, pp. 1314–1324. [Paper](https://arxiv.org/abs/1905.02244).
 
-Run it with:
-
-```bash
-python scripts/run_m1_lvef3.py path/to/plax_cine.mp4 --fps 50
-```
-
-See [M1-LVEF3 model card](docs/models/m1-lvef3.md). Its calibration has not
-been confirmed on an untouched external PLAX cohort.
-
-## Previous wall-motion deployment candidate
-
-The primary deployment path is the **Student Model**:
-
-- MobileNetV3-Small two-wall heatmap model
-- 985,634 parameters
-- FP32 ONNX, 3.77 MiB
-- 320 x 320 frames, dynamic batch
-- SHA-256 `FE5FC82...3956194`
-- full-cycle global fractional shortening mapped by a frozen development-only
-  linear head
-
-The older Student v4 direct-regression ensemble remains under
-`checkpoints/student_v4/` for reproducibility, but it is not the recommended
-board-validation target.
-
-## Install
-
-```bash
-git clone https://github.com/Sakuya4/EdgeLVEF.git
-cd EdgeLVEF
-python -m pip install -e .
-```
-
-## Validate an EchoXFlow or strong-label dataset
-
-On the workstation that owns the D:\ or E:\ dataset, prepare
-test_config.json from test_config.example.json or answer the two path prompts,
-then run:
-
-~~~powershell
-python test.py
-~~~
-
-The runner performs resume-safe M1-LVEF3 inference when needed, evaluates at
-exam level, audits patient/exam fold leakage and subgroup bias, and produces a
-de-identified ZIP that can be returned for analysis. Original videos are not
-copied. See
-[dataset validation instructions](docs/verification/lvef-dataset-validation.md).
-## Analyze one PLAX cine
-
-Use a PLAX-compatible cine containing at least one full cardiac cycle:
-
-```bash
-edgelvef-analyze path/to/plax_cine.mp4 --provider CPUExecutionProvider
-```
-
-The input must show the scan-converted ultrasound sector, not the complete
-machine user interface. Crop a full-interface export before analysis:
-
-```bash
-edgelvef-analyze cine.mp4 --crop 120,40,920,840
-```
-
-The output includes the experimental LVEF mapping, low-EF score, global
-fractional shortening, wall confidence, valid-frame fraction, and ED/ES phase.
-The LVEF output is secondary research output; it is not a clinical measurement.
-
-Render the predicted walls and ED/ES candidates for visual verification:
-
-```bash
-edgelvef-render path/to/plax_cine.mp4 outputs/wall-overlay.mp4
-```
-
-## Validate an Embedded Linux board
-
-Run on the physical board, not on the development computer:
-
-```bash
-bash scripts/run_embedded_verification.sh imx93-board CPUExecutionProvider
-```
-
-The JSON result records the model checksum, operating system, architecture,
-active ONNX provider, median/p95 latency, output shape, and finite-output check.
-Do not label CPU fallback as NPU execution.
-
-The tested FRDM-i.MX93 support for the 3.5-inch RPi SPI LCD and XPT2046 touch
-controller is under
-[`hardware/imx93-rpi-lcd35`](hardware/imx93-rpi-lcd35/README.md). It includes
-the Yocto layer, device-tree patch, Weston configuration, COM3 utilities, and
-rollback procedure.
-
-Detailed instructions:
-
-- [Architecture](docs/architecture.md)
-- [Embedded Linux verification](docs/verification/embedded-linux.md)
-- [Acceptance criteria](docs/verification/acceptance-criteria.md)
-- [Result template](docs/verification/report-template.md)
-- [Validation roadmap](docs/verification/validation-roadmap.md)
-- [Student Model card](docs/models/student-model.md)
-- [M1-LVEF3 model card](docs/models/m1-lvef3.md)
-
-## Repository boundaries
-
-```text
-edgelvef/domain          Pure wall geometry and frozen decision rules
-edgelvef/application     Cine-analysis use cases and ports
-edgelvef/infrastructure ONNX Runtime, video, configuration, system adapters
-edgelvef/interfaces      Command-line entry points
-models/                  Frozen deployable artifacts and checksums
-scripts/                 Thin operator scripts; no model logic
-tests/                   Unit and ONNX integration tests
-docs/                    Architecture and verification procedures
-hardware/                Board-specific integration and diagnostic files
-checkpoints/student_v4   Legacy research baseline
-```
-
-## Evidence boundary
-
-The current confirmatory EchoXFlow evaluation used 68 exams, only five of which
-had LVEF <=40%. Raw global fractional shortening achieved AUROC 0.902; the
-continuous mapping had MAE 6.57 percentage points and overestimated the low-EF
-tail. These are internal research results, not external clinical validation.
-
-No patient images or source training data are included.
-
-## Current PLAX LVEF paper package (2026-10-05)
-
-[Method, code and evidence](research/plax_lvef/README.md) documents the selected
-M5-G MobileNetV3-Large Student, six-backbone benchmark and negative M9–M11
-extensions. [LaTeX writing prompt](research/plax_lvef/PAPER_WRITING_PROMPT.md)
-is a ready-to-paste instruction for an independent writing AI. This research
-package does not change the App, probe connection or active runtime weights.
+[5] J. Lin, C. Gan, and S. Han, “TSM: Temporal shift module for efficient video understanding,” in *Proc. IEEE/CVF ICCV*, 2019, pp. 7083–7093. [Paper](https://arxiv.org/abs/1811.08383).

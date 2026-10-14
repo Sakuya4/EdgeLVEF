@@ -1,4 +1,4 @@
-"""Distil the frozen M5-A ensemble into the locked edge video Student."""
+"""Distil the frozen spatiotemporal ensemble into the locked edge video Student."""
 
 from __future__ import annotations
 
@@ -55,9 +55,8 @@ def parse_args() -> argparse.Namespace:
             "efficientnet_b0",
             "resnet18",
         ),
-        default="mobilenet_v3_small",
+        default="mobilenet_v3_large",
     )
-    parser.add_argument("--boundary-recovery", action="store_true")
     parser.add_argument("--smoke", action="store_true")
     return parser.parse_args()
 
@@ -107,7 +106,7 @@ def load_or_extract_teacher_targets(
             embedding = archive["embedding"]
         if len(prediction) != len(frame):
             raise ValueError("Teacher cache length does not match the cache index")
-        print(f"M5-E teacher cache ready cines={len(frame)}", flush=True)
+        print(f"Student teacher cache ready cines={len(frame)}", flush=True)
         return prediction, embedding
 
     loader = DataLoader(
@@ -131,7 +130,7 @@ def load_or_extract_teacher_targets(
             embeddings.append(feature.cpu().numpy())
             if number % 25 == 0 or number == len(loader):
                 print(
-                    f"M5-E teacher extraction checkpoint={checkpoint_path.parent.name} "
+                    f"Student teacher extraction checkpoint={checkpoint_path.parent.name} "
                     f"batch={number}/{len(loader)}",
                     flush=True,
                 )
@@ -144,7 +143,7 @@ def load_or_extract_teacher_targets(
     embedding = np.mean(seed_embeddings, axis=0).astype(np.float32)
     args.teacher_cache.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(args.teacher_cache, prediction=prediction, embedding=embedding)
-    print(f"M5-E teacher targets saved cines={len(frame)}", flush=True)
+    print(f"Student teacher targets saved cines={len(frame)}", flush=True)
     return prediction, embedding
 
 
@@ -301,21 +300,10 @@ def main() -> None:
     }
     train_frame = datasets["train"].frame
     counts = train_frame.groupby("study_id").size().to_dict()
-    if args.boundary_recovery:
-        study_targets = train_frame.drop_duplicates("study_id").lvef.to_numpy(float)
-        study_bins = np.digitize(study_targets, [30.0, 40.0, 50.0, 60.0])
-        bin_counts = np.bincount(study_bins, minlength=5)
-        bin_weights = np.clip(len(study_targets) / (5 * np.maximum(bin_counts, 1)), 0.5, 3.0)
-        weights = [
-            float(bin_weights[np.digitize(float(row.lvef), [30.0, 40.0, 50.0, 60.0])])
-            / counts[str(row.study_id)]
-            for row in train_frame.itertuples()
-        ]
-    else:
-        weights = [
-            (3.0 if row.lvef <= 40.0 else 1.0) / counts[str(row.study_id)]
-            for row in train_frame.itertuples()
-        ]
+    weights = [
+        (3.0 if row.lvef <= 40.0 else 1.0) / counts[str(row.study_id)]
+        for row in train_frame.itertuples()
+    ]
     sampler = WeightedRandomSampler(weights, len(train_frame), replacement=True)
     loaders = {
         "train": DataLoader(
@@ -345,10 +333,7 @@ def main() -> None:
         temporal_model="tsm",
     ).to(device)
     projector = nn.Linear(model.temporal_dim, teacher_embedding.shape[1]).to(device)
-    ordinal_head = nn.Linear(model.temporal_dim, 4).to(device) if args.boundary_recovery else None
     optimized_parameters = list(model.parameters()) + list(projector.parameters())
-    if ordinal_head is not None:
-        optimized_parameters += list(ordinal_head.parameters())
     optimizer = torch.optim.AdamW(
         optimized_parameters,
         lr=3e-4,
@@ -361,13 +346,8 @@ def main() -> None:
         "cuda", enabled=device.type == "cuda", init_scale=1024.0
     )
     best, stale, history = None, 0, []
-    study_labels = train_frame.drop_duplicates("study_id").lvef.to_numpy(float)
-    positive_weight = min(float(np.sum(study_labels > 40.0) / max(np.sum(study_labels <= 40.0), 1)), 3.0)
-    ordinal_thresholds = torch.tensor([30.0, 40.0, 50.0, 60.0], device=device)
     for epoch in range(1, args.epochs + 1):
         model.train(); projector.train(); losses = []
-        if ordinal_head is not None:
-            ordinal_head.train()
         for batch in loaders["train"]:
             images = batch["frames"].to(device, non_blocking=True)
             report = batch["lvef"].to(device)
@@ -383,29 +363,6 @@ def main() -> None:
                 )
                 projected = F.normalize(projector(student_feature).float(), dim=1)
                 loss = loss + 0.10 * (1.0 - (projected * teacher_feature).sum(dim=1)).mean()
-                if args.boundary_recovery:
-                    low_target = report.le(40.0).float()
-                    loss = loss + 0.25 * F.binary_cross_entropy_with_logits(
-                        low_logit,
-                        low_target,
-                        pos_weight=report.new_tensor(positive_weight),
-                    )
-                    ordinal_target = report[:, None].le(ordinal_thresholds).float()
-                    loss = loss + 0.15 * F.binary_cross_entropy_with_logits(
-                        ordinal_head(student_feature), ordinal_target
-                    )
-                    numerical_low_logit = (40.0 - predicted) / 5.0
-                    loss = loss + 0.20 * F.binary_cross_entropy_with_logits(
-                        numerical_low_logit, low_target
-                    )
-                    difference = report[:, None] - report[None, :]
-                    predicted_difference = predicted[:, None] - predicted[None, :]
-                    pairs = torch.triu(difference.abs() >= 5.0, diagonal=1)
-                    if pairs.any():
-                        direction = difference[pairs].sign()
-                        loss = loss + 0.10 * F.softplus(
-                            -direction * predicted_difference[pairs] / 5.0
-                        ).mean()
             optimizer.zero_grad(set_to_none=True)
             scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
@@ -427,24 +384,18 @@ def main() -> None:
             "validation_literal": validation_literal,
         })
         print(
-            f"M5-E epoch={epoch:02d} loss={np.mean(losses):.3f} "
+            f"Student epoch={epoch:02d} loss={np.mean(losses):.3f} "
             f"val_mae={result['mae']:.3f} low_mae={result['low_ef_mae']:.3f} "
             f"auroc={result['auroc']:.3f} sensitivity={result['sensitivity']:.3f}",
             flush=True,
         )
-        boundary_eligible = validation_literal["sensitivity"] >= 0.70
-        score = (
-            (0 if boundary_eligible else 1, result["mae"])
-            if args.boundary_recovery
-            else (0, result["mae"])
-        )
+        score = (0, result["mae"])
         if best is None or score < best[0]:
             best = (score, epoch, threshold); stale = 0
             torch.save(
                 {
                     "model": model.state_dict(),
                     "projector": projector.state_dict(),
-                    "ordinal_head": ordinal_head.state_dict() if ordinal_head is not None else None,
                     "epoch": epoch,
                 },
                 args.secure_output / "best.pt",
@@ -466,8 +417,6 @@ def main() -> None:
     literal = literal_metrics(test)
     error_metrics = lvef_error_metrics(test)
     parameter_count = sum(parameter.numel() for parameter in model.parameters())
-    if ordinal_head is not None:
-        parameter_count += sum(parameter.numel() for parameter in ordinal_head.parameters())
     gates = {
         "mae_le_7_1346": test_metrics["mae"] <= 7.1346,
         "auroc_ge_0_9432": test_metrics["auroc"] >= 0.9432,
@@ -478,11 +427,7 @@ def main() -> None:
     summary = {
         "status": "complete",
         "evidence": "single patient-disjoint MIMIC development split with report-linked weak LVEF",
-        "student": (
-            f"{args.backbone}_tsm_boundary_recovery"
-            if args.boundary_recovery
-            else f"{args.backbone}_tsm"
-        ),
+        "student": f"{args.backbone}_tsm",
         "epochs_completed": len(history),
         "best_epoch": int(checkpoint["epoch"]),
         "parameter_count": int(parameter_count),
@@ -498,7 +443,7 @@ def main() -> None:
         json.dumps(summary, indent=2), encoding="utf-8"
     )
     print(json.dumps(summary, indent=2), flush=True)
-    print("M5-E EDGE STUDENT COMPLETE", flush=True)
+    print("Student EDGE STUDENT COMPLETE", flush=True)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-# M1-LVEF3 artifacts
+# LVID tracking artifacts
 
 - `m1_lvid_tracker_fp32.onnx`: 978,214-parameter role-invariant ShuffleNetV2
   LVID endpoint tracker, input `[batch,3,256,256]`, output

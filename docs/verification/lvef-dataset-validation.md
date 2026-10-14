@@ -53,7 +53,7 @@ D:\EchoXFlow\videos\exam001.mp4 or E:\EchoXFlow\exam001\plax.avi. Use the real
 per-recording fps. crop is optional and uses x1,y1,x2,y2. Never copy pseudo
 labels into gt_lvef.
 
-## Step 1: batch M1-LVEF3 inference
+## Step 1: batch LVID measurement inference
 
 Run from the repository root on the dataset workstation:
 

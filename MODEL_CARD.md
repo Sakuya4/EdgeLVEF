@@ -1,20 +1,19 @@
-# EdgeLVEF model cards
+# EdgeLVEF model specification
 
-The repository contains four research generations:
+The selected video model estimates LVEF from PLAX cines with a MobileNetV3-Large Student and offline R(2+1)D-18 ensemble supervision.
 
-1. **M5 Teacher/Student**, the current direct-video research candidate. The
-   31.3M-parameter R(2+1)D Teacher is distilled into a 1.118M-parameter
-   MobileNetV3-Small+TSM Student. Architecture and aggregate results are public;
-   credentialed-data-derived weights are not. See
-   [docs/models/m5-teacher-student.md](docs/models/m5-teacher-student.md).
-2. **M1-LVEF3**, the current interpretable PLAX LVEF development candidate. See
-   [docs/models/m1-lvef3.md](docs/models/m1-lvef3.md).
-3. **Student Model**, the previous wall-motion deployment candidate. See
-   [docs/models/student-model.md](docs/models/student-model.md).
-4. **Student v4 direct-regression ensemble**, retained under
-   `checkpoints/student_v4/` as a legacy reproducibility baseline. Its
-   exam-level five-fold out-of-fold MAE was 6.00 percentage points and low-EF
-   AUROC was 0.694. It regressed strongly toward the mean and is not the
-   recommended board target.
+| Component | Specification |
+|---|---|
+| Teacher ensemble | Two R(2+1)D-18 networks; 62,601,276 parameters total |
+| Student | MobileNetV3-Large + temporal shift + depthwise temporal CNN |
+| Student parameters | 3,212,755 |
+| Student input | 32 grayscale frames at 112 × 112 |
+| Student outputs | Continuous LVEF and low-EF score |
+| Training targets | Report-linked EF, Teacher EF, low-EF soft target and Teacher feature |
+| Aggregation | Mean cine predictions within each study |
 
-None has prospective or external clinical validation. None is a medical device.
+Read the [method](research/plax_lvef/METHOD.md), [Teacher specification](research/plax_lvef/TEACHER_MODEL_CARD.md), [Student specification](research/plax_lvef/STUDENT_MODEL_CARD.md), and [results](research/plax_lvef/RESULTS.md).
+
+The [Readiness Gate](docs/models/readiness-gate.md) is an independent input-assessment module. It uses MobileNetV3-Small and five-frame pooling to output view, readiness and quality summaries.
+
+Architecture and aggregate results are public. Trained LVEF weights and credentialed records remain in access-controlled storage. See [artifact terms](WEIGHTS_LICENSE.md).

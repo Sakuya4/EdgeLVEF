@@ -1,56 +1,23 @@
-# Teacher Model Card: M5-A R(2+1)D Ensemble
+# Spatiotemporal Teacher ensemble
 
-## Role
+The Teacher provides high-capacity PLAX video supervision during model development.
 
-M5-A is the high-capacity offline Teacher. It is used to learn motion-sensitive
-PLAX representations and generate training-only targets for the edge Student.
-It is not required during Student inference.
+| Property | Specification |
+|---|---|
+| Ensemble | Two independently trained R(2+1)D-18 networks |
+| Input | 64 grayscale frames repeated to RGB |
+| Resolution and sampling | 112 × 112; temporal stride 2 |
+| Representation | 512-D global spatiotemporal feature |
+| Prediction head | Linear continuous-EF regression |
+| Parameters | 31,300,638 per model; 62,601,276 total |
+| Initialization | Kinetics-400 |
+| Learning objective | MSE against report-linked EF |
+| Optimizer | RAdam; learning rate 1 × 10⁻³ |
+| Checkpoint selection | Validation MAE |
+| Ensemble targets | Mean EF estimate and mean encoder representation |
 
-## Architecture
+The two training runs use seeds 20261001 and 20261002 and effective batch sizes 16 and 32. Study-balanced sampling gives low-EF training studies additional weight.
 
-- Two independently trained R(2+1)D-18 models.
-- Kinetics-400 initialization.
-- Input per cine: 64 grayscale frames repeated to three channels, 112 x 112,
-  temporal stride 2.
-- Encoder output: 512-dimensional feature after global spatiotemporal pooling.
-- Prediction head: one linear continuous-LVEF regressor.
-- Parameters: 31,300,638 per Teacher; 62,601,276 for the two-model ensemble.
+The ensemble achieves MAE 5.635 pp, RMSE 7.142 pp, Pearson r 0.848 and CCC 0.805 on the 82-study development benchmark. [Results](RESULTS.md) includes low-EF metrics and controlled temporal-input assessments.
 
-The two runs use seeds `20261001` and `20261002` and different effective batch
-sizes through gradient accumulation. Ensemble LVEF and representations are the
-mean of the two frozen models.
-
-## Training
-
-- Loss: MSE against report-linked LVEF.
-- Optimizer: RAdam, learning rate `1e-3`.
-- Checkpoint selection: validation MAE.
-- Early stopping patience: seven epochs.
-- Sampling: study-balanced with threefold low-EF enrichment in training only.
-
-## Frozen ensemble results
-
-On the fixed patient-disjoint development test (82 studies, 33 low-EF):
-
-| Metric | Result |
-| --- | ---: |
-| LVEF MAE | 5.635 pp |
-| RMSE | 7.142 pp |
-| Low-EF MAE | 4.224 pp |
-| Pearson r | 0.848 |
-| CCC | 0.805 |
-| AUROC | 0.992 |
-| AUPRC | 0.988 |
-| Screening sensitivity | 0.970 |
-| Screening specificity | 0.918 |
-| Screening F1 | 0.928 |
-
-Frame repetition increased MAE to 11.692, showing dependence on changing cine
-content. Reversal increased MAE to 7.703, shuffling to 6.402 and peripheral
-masking to 7.574. The masking result is a shortcut/domain sensitivity warning.
-
-## Limitations
-
-The Teacher is large, weak-label trained and evaluated on an internal inspected
-development split. It is not an external clinical reference, and the ensemble
-weights are not publicly redistributed.
+Architecture is defined by `GaoCineRegressor` in `src/plax_lvef/study_video.py`, with the importable equivalent `GaoR2Plus1DTeacher` in `edgelvef.research`. Trained ensemble weights remain in access-controlled storage.

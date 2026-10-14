@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1040" viewBox="0 0 1800 1040">
+<title>EdgeLVEF offline learning and compact Student inference</title>
+<desc>Two-panel architecture. Offline ensemble EF and feature targets train an independent compact Student. The Student includes MobileNetV3-Large, temporal shift, residual depthwise temporal convolution, pooling and two heads. Readiness assessment is a separate module.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#111"/></marker></defs>
+
+<rect width="1800" height="1040" fill="white"/>
+<text x="900" y="44" class="title" font-family="Times New Roman" fill="#111" font-size="34" text-anchor="middle" font-weight="bold">EdgeLVEF: PLAX video knowledge distillation</text>
+<text x="40" y="101" class="heading" font-family="Times New Roman" fill="#111" font-size="31" text-anchor="start" font-weight="bold">(a) Offline Teacher–Student learning</text>
+<rect class="box" fill="#fff" stroke="#111" stroke-width="1.8" x="40" y="133" width="260" height="84"/>
+<text x="170" y="166" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">Teacher input</text><text x="170" y="196" class="small" font-family="Times New Roman" fill="#111" font-size="23" text-anchor="middle">64 frames · 112 × 112</text>
+<path fill="none" stroke="#111" stroke-width="2" d="M300 175H364"/><polygon fill="#111" points="364,175 353,170 353,180"/>
+<rect class="box" fill="#fff" stroke="#111" stroke-width="1.8" x="370" y="133" width="340" height="84"/>
+<text x="540" y="166" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">Two R(2+1)D-18 networks</text><text x="540" y="196" class="small" font-family="Times New Roman" fill="#111" font-size="23" text-anchor="middle">Spatiotemporal encoders</text>
+<path fill="none" stroke="#111" stroke-width="2" d="M710 175H784"/><polygon fill="#111" points="784,175 773,170 773,180"/>
+<rect class="box" fill="#fff" stroke="#111" stroke-width="1.8" x="790" y="133" width="260" height="84"/>
+<text x="920" y="181" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">Mean ensemble</text>
+<path fill="none" stroke="#111" stroke-width="2" d="M1050 175H1114"/><polygon fill="#111" points="1114,175 1103,170 1103,180"/>
+<rect class="box" fill="#fff" stroke="#111" stroke-width="1.8" x="1120" y="133" width="630" height="84"/>
+<text x="1435" y="166" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">Teacher EF</text><text x="1435" y="196" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">Teacher representation · 512-D</text>
+<rect class="box" fill="#fff" stroke="#111" stroke-width="1.8" x="40" y="267" width="260" height="84"/>
+<text x="170" y="300" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">Student input</text><text x="170" y="330" class="small" font-family="Times New Roman" fill="#111" font-size="23" text-anchor="middle">32 frames · 112 × 112</text>
+<path fill="none" stroke="#111" stroke-width="2" d="M300 309H364"/><polygon fill="#111" points="364,309 353,304 353,314"/>
+<rect class="box" fill="#fff" stroke="#111" stroke-width="1.8" x="370" y="267" width="340" height="84"/>
+<text x="540" y="300" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">Edge Student</text><text x="540" y="330" class="small" font-family="Times New Roman" fill="#111" font-size="23" text-anchor="middle">Detailed in panel (b)</text>
+<path fill="none" stroke="#111" stroke-width="2" d="M710 309H784"/><polygon fill="#111" points="784,309 773,304 773,314"/>
+<rect class="box" fill="#fff" stroke="#111" stroke-width="1.8" x="790" y="267" width="260" height="84"/>
+<text x="920" y="300" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">EF · low-EF logit</text><text x="920" y="330" class="small" font-family="Times New Roman" fill="#111" font-size="23" text-anchor="middle">256-D representation</text>
+<path fill="none" stroke="#111" stroke-width="2" d="M1050 335H1114"/><polygon fill="#111" points="1114,335 1103,330 1103,340"/>
+<rect class="box" fill="#fff" stroke="#111" stroke-width="1.8" x="1120" y="267" width="630" height="84"/>
+<text x="1435" y="300" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">Training-only feature projector</text><text x="1435" y="330" class="small" font-family="Times New Roman" fill="#111" font-size="23" text-anchor="middle">256 → 512 dimensions</text>
+<text x="235" y="402" class="note" font-family="Times New Roman" fill="#111" font-size="22" text-anchor="middle">Report EF + Student EF</text>
+<path fill="none" stroke="#111" stroke-width="2" d="M235 411V418 M235 424V431 M235 437V438"/><polygon fill="#111" points="235,438 230,427 240,427"/>
+<rect class="box" fill="#fff" stroke="#111" stroke-width="1.8" x="40" y="445" width="390" height="96"/>
+<text x="235" y="480" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">Report supervision</text><text x="235" y="516" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">Huber · weight 1.00</text>
+<text x="675" y="402" class="note" font-family="Times New Roman" fill="#111" font-size="22" text-anchor="middle">Teacher EF + Student EF</text>
+<path fill="none" stroke="#111" stroke-width="2" d="M675 411V418 M675 424V431 M675 437V438"/><polygon fill="#111" points="675,438 670,427 680,427"/>
+<rect class="box" fill="#fff" stroke="#111" stroke-width="1.8" x="480" y="445" width="390" height="96"/>
+<text x="675" y="480" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">EF distillation</text><text x="675" y="516" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">Huber · weight 0.50</text>
+<text x="1115" y="402" class="note" font-family="Times New Roman" fill="#111" font-size="22" text-anchor="middle">Soft target + Student logit</text>
+<path fill="none" stroke="#111" stroke-width="2" d="M1115 411V418 M1115 424V431 M1115 437V438"/><polygon fill="#111" points="1115,438 1110,427 1120,427"/>
+<rect class="box" fill="#fff" stroke="#111" stroke-width="1.8" x="920" y="445" width="390" height="96"/>
+<text x="1115" y="480" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">Low-EF transfer</text><text x="1115" y="516" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">BCE · weight 0.20</text>
+<text x="1555" y="402" class="note" font-family="Times New Roman" fill="#111" font-size="22" text-anchor="middle">Teacher + projected Student features</text>
+<path fill="none" stroke="#111" stroke-width="2" d="M1555 411V418 M1555 424V431 M1555 437V438"/><polygon fill="#111" points="1555,438 1550,427 1560,427"/>
+<rect class="box" fill="#fff" stroke="#111" stroke-width="1.8" x="1360" y="445" width="390" height="96"/>
+<text x="1555" y="480" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">Feature alignment</text><text x="1555" y="516" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">Cosine distance · weight 0.10</text>
+<text x="575" y="586" class="note" font-family="Times New Roman" fill="#111" font-size="22" text-anchor="middle">Soft target = sigmoid((40 − Teacher EF) / 5); Huber δ = 5 pp</text>
+<text x="1435" y="586" class="note" font-family="Times New Roman" fill="#111" font-size="22" text-anchor="middle">Teacher and feature projector: training only</text>
+<line x1="40" y1="620" x2="1750" y2="620" stroke="#aaa"/>
+<text x="40" y="672" class="heading" font-family="Times New Roman" fill="#111" font-size="31" text-anchor="start" font-weight="bold">(b) Compact Student inference and separate input assessment</text>
+<rect class="box" fill="#fff" stroke="#111" stroke-width="1.8" x="40" y="709" width="230" height="102"/>
+<text x="155" y="742" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">PLAX cine</text><text x="155" y="773" class="small" font-family="Times New Roman" fill="#111" font-size="23" text-anchor="middle">32 grayscale frames</text><text x="155" y="799" class="note" font-family="Times New Roman" fill="#111" font-size="22" text-anchor="middle">112 × 112</text>
+<path fill="none" stroke="#111" stroke-width="2" d="M270 760H309"/><polygon fill="#111" points="309,760 298,755 298,765"/>
+<rect class="box" fill="#fff" stroke="#111" stroke-width="1.8" x="315" y="709" width="255" height="102"/>
+<text x="442" y="745" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">MobileNetV3-Large</text><text x="442" y="780" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">+ temporal shift</text>
+<path fill="none" stroke="#111" stroke-width="2" d="M570 760H609"/><polygon fill="#111" points="609,760 598,755 598,765"/>
+<rect class="box" fill="#fff" stroke="#111" stroke-width="1.8" x="615" y="709" width="220" height="102"/>
+<text x="725" y="745" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">Frame projection</text><text x="725" y="780" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">960 → 128</text>
+<path fill="none" stroke="#111" stroke-width="2" d="M835 760H874"/><polygon fill="#111" points="874,760 863,755 863,765"/>
+<rect class="box" fill="#fff" stroke="#111" stroke-width="1.8" x="880" y="709" width="270" height="102"/>
+<text x="1015" y="742" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">Residual depthwise TCN</text><text x="1015" y="776" class="small" font-family="Times New Roman" fill="#111" font-size="23" text-anchor="middle">dilation = 1, 2, 4</text>
+<path fill="none" stroke="#111" stroke-width="2" d="M1150 760H1189"/><polygon fill="#111" points="1189,760 1178,755 1178,765"/>
+<rect class="box" fill="#fff" stroke="#111" stroke-width="1.8" x="1195" y="709" width="245" height="102"/>
+<text x="1317" y="742" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">Temporal mean + max</text><text x="1317" y="776" class="small" font-family="Times New Roman" fill="#111" font-size="23" text-anchor="middle">256-D pooled feature</text>
+<path fill="none" stroke="#111" stroke-width="2" d="M1440 760H1479"/><polygon fill="#111" points="1479,760 1468,755 1468,765"/>
+<rect class="box" fill="#fff" stroke="#111" stroke-width="1.8" x="1485" y="709" width="265" height="102"/>
+<text x="1617" y="742" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">Prediction heads</text><text x="1617" y="773" class="small" font-family="Times New Roman" fill="#111" font-size="23" text-anchor="middle">LVEF estimate</text><text x="1617" y="799" class="note" font-family="Times New Roman" fill="#111" font-size="22" text-anchor="middle">Low-EF score</text>
+<path fill="none" stroke="#111" stroke-width="2" d="M155 811V866"/><polygon fill="#111" points="155,866 150,855 160,855"/>
+<rect class="box" fill="#fff" stroke="#111" stroke-width="1.8" x="40" y="873" width="530" height="105"/>
+<text x="305" y="909" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">PLAX Readiness Gate</text><text x="305" y="940" class="small" font-family="Times New Roman" fill="#111" font-size="23" text-anchor="middle">Five-frame MobileNetV3-Small pooling</text><text x="305" y="965" class="note" font-family="Times New Roman" fill="#111" font-size="22" text-anchor="middle">View / readiness / quality</text>
+<text x="950" y="904" font-family="Times New Roman" fill="#111" font-size="25" text-anchor="middle">Student: 3,212,755 parameters</text>
+<text x="950" y="940" class="note" font-family="Times New Roman" fill="#111" font-size="22" text-anchor="middle">Teacher-free inference</text>
+<path fill="none" stroke="#111" stroke-width="2" d="M1330 904H1400"/><polygon fill="#111" points="1400,904 1389,899 1389,909"/><text x="1585" y="911" class="note" font-family="Times New Roman" fill="#111" font-size="22" text-anchor="middle">Model computation</text>
+<path fill="none" stroke="#111" stroke-width="2" d="M1330 947H1337 M1343 947H1350 M1356 947H1363 M1369 947H1376 M1382 947H1389 M1395 947H1400"/><polygon fill="#111" points="1400,947 1389,942 1389,952"/><text x="1585" y="954" class="note" font-family="Times New Roman" fill="#111" font-size="22" text-anchor="middle">Training supervision</text>
+</svg>

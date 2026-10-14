@@ -1,4 +1,4 @@
-# M1-A frozen baseline
+# Anatomical measurement artifacts
 
 Verify the artifact before use:
 
@@ -6,5 +6,5 @@ Verify the artifact before use:
 sha256sum -c models/m1_measurement_baseline/SHA256SUMS
 ```
 
-See `docs/models/m1-measurement-baseline.md` for preprocessing, output order,
-development metrics, limitations, and the collaborator test command.
+The existing measurement command is `scripts/run_m1_measurement.py`.
+See the [application guide](../../docs/application.md) for repository operation.

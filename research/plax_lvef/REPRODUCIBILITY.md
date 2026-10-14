@@ -1,77 +1,57 @@
-# Reproduction and packaging boundary
+# Training and architecture reproduction
 
-Run from `research/plax_lvef`. Public tests use synthetic inputs only:
+Run from `research/plax_lvef`:
 
-```sh
+```bash
 python -m pip install -r requirements.txt
 python -m pytest tests -q
 python scripts/train_teacher.py --help
 python scripts/train_student.py --help
-python scripts/run_m10_motion_fusion.py --help
-python scripts/run_m11_motion_diagnostic.py --help
 ```
 
-Environment used for local experiments:Windows,Anaconda Python,CUDA GPU.
-CPU tests/CLI are verified at publishing time; target-Linux full training and
-i.MX93 performance are not verified by these packaging checks. Requirements
-are minimum ranges,not an exact frozen environment or deterministic guarantee.
+## Input records
 
-## Authorized inputs
+Teacher manifest columns are `subject_id, study_id, file_id, dicom_path, EF_value, split`. The decoded cache index uses `subject_id, study_id, file_id, path, lvef, split`. Each cine cache contains a uint8 `frames` array with shape `[T,112,112]`.
 
-Teacher manifest columns:subject_id,study_id,file_id,dicom_path,EF_value,split.
-Cache index columns:subject_id,study_id,file_id,path,lvef,split.
-Each local NPZ contains `frames` as uint8[T,112,112]. Only PLAX-selected cines
-belong here. Access/selection of MIMIC and label linkage must be reproduced
-by an authorized researcher; no manifest records are redistributed.
-Subject IDs must belong to only one split; study EF must be consistent across
-cines. Teacher-target NPZ stores aligned `prediction` and512-D `embedding`.
-Credentialed identifiers/caches/targets/checkpoints/predictions stay in a protected
-local derived directory. Local exception messages may contain paths; redact
-before sharing terminal logs. Public aggregate summaries must be inspected
-before external release.
+Select PLAX cines and keep each patient in one partition. All cines in a study share the study EF reference. Image files, manifests, Teacher targets, checkpoints and individual predictions are stored in an authorized local data directory.
 
-## Main Teacher and Student
+## Teacher training
 
-`train_teacher.py --variant gao` reproduces the published-style R(2+1)D
-regression. Original Teacher seeds20261001/20261002,64 frames,stride2,
-112px,validation selection. Effective batch16/32 must be realized via batch
-and accumulation settings from the original protocol; do not silently replace
-them with defaults and call the result exact replication.
+```bash
+python scripts/train_teacher.py \
+  --manifest /protected/derived/plax_manifest.csv \
+  --cache-root /protected/derived/cache_112 \
+  --secure-output /protected/derived/teacher_batch16 \
+  --summary-output /local/aggregate/teacher_batch16 \
+  --frames 64 --stride 2 --image-size 112 \
+  --batch-size 4 --accumulate 4 --seed 20261001
+```
 
-`train_student.py --backbone mobilenet_v3_large` is the selected Student;
-the default remains Small for legacy compatibility,so explicitly set Large.
-Original Student:seed20261001,max30 epochs,patience7,batch8,32 frames,
-best epoch18 (25 epochs completed). Teacher caches/checkpoints are local inputs.
-See script `--help` for required paths; do not train using invented labels.
+Train the second Teacher with seed 20261002 and the recorded effective batch size 32. The ensemble averages EF predictions and 512-D representations.
 
-## M10 / M11 diagnostics
+## Student training
 
-Public exports retain scientific code and replace the workstation-specific
-protected-root literal with REQUIRED `--credentialed-root` for portability.
-The locator adapter contains the exact checkpoint loader and soft-coordinate
-extraction,not a checkpoint. M1 locator weights are separately required for
-M10 and are not redistributed. M11 reuses the complete M10 map cache.
-
-Example M11 command with authorized local paths supplied by the operator:
-
-```sh
-python scripts/run_m11_motion_diagnostic.py \
-  --credentialed-root /protected/derived \
+```bash
+python scripts/train_student.py \
   --cache-index /protected/derived/cache_112/restricted_index.csv \
+  --teacher-checkpoint /protected/derived/teacher_batch16/best.pt \
+  --teacher-checkpoint /protected/derived/teacher_batch32/best.pt \
   --teacher-cache /protected/derived/teacher_targets.npz \
-  --motion-cache /protected/derived/m10/cache \
-  --secure-output /protected/derived/m11 \
-  --summary-output /local/aggregate-results/m11 \
-  --epochs 20 --seed 20261005
+  --secure-output /protected/derived/student \
+  --summary-output /local/aggregate/student \
+  --backbone mobilenet_v3_large \
+  --frames 32 --image-size 112 --batch-size 8 \
+  --epochs 30 --patience 7 --seed 20261001
 ```
 
-Do not reuse an original Windows run folder with the public-export script
-hash:strict run-signature checks intentionally reject changed implementations.
-Choose a new protected reproduction output. Tiny `--smoke` runs test execution,
-not model quality. Histories/checkpoints are selected on validation before test
-metrics. Existing development test has been repeatedly inspected; do not label
-it as untouched validation in a paper.
+The script checks Teacher-target alignment, trains with the specified distillation objective and selects the checkpoint using validation MAE. It then aggregates evaluation cines to study-level predictions.
 
-M9 aggregate results are included,but its full original multi-dataset training
-pipeline is not exported in this bundle. Do not claim end-to-end M9 reproduction
-from this package. This package is not an App integration or model-weight update.
+## Architecture checks
+
+The tests instantiate networks with `pretrained=False` and verify output shapes and parameter counts. The selected Student count is 3,212,755. The two Teachers total 62,601,276 parameters.
+
+Training is separate from the device runtime. Device evaluation records model checksums, provider selection, numerical agreement, latency, memory and power through the [verification procedures](../../docs/verification/embedded-linux.md).
+
+## Data handling
+
+Use your own authorized dataset access. Keep restricted inputs and individual outputs in the protected data directory. Publish aggregate results after privacy review. This package does not distribute trained LVEF weights or patient records.

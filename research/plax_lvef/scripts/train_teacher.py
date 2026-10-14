@@ -1,4 +1,4 @@
-"""Train one locked M5 PLAX video experiment variant."""
+"""Train the spatiotemporal PLAX EF Teacher."""
 
 from __future__ import annotations
 
@@ -20,12 +20,11 @@ PROJECT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT / "src"))
 sys.path.insert(0, str(PROJECT / "scripts"))
 
-from plax_lvef.study_video import GaoCineRegressor, StudyTemporalTeacher  # noqa: E402
+from plax_lvef.study_video import GaoCineRegressor  # noqa: E402
 from plax_lvef.dicom import decode_dicom  # noqa: E402
 
 KINETICS_MEAN = torch.tensor([0.43216, 0.394666, 0.37645])[:, None, None, None]
 KINETICS_STD = torch.tensor([0.22803, 0.22145, 0.216989])[:, None, None, None]
-ORDINAL_THRESHOLDS = torch.tensor([30.0, 40.0, 50.0, 60.0])
 
 
 def parse_args() -> argparse.Namespace:
@@ -34,9 +33,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cache-root", type=Path, required=True)
     parser.add_argument("--secure-output", type=Path, required=True)
     parser.add_argument("--summary-output", type=Path, required=True)
-    parser.add_argument(
-        "--variant", choices=("gao", "mil_regression", "mil_multitask", "mil_physiology"), required=True
-    )
+    parser.add_argument("--variant", choices=("gao",), default="gao")
     parser.add_argument("--epochs", type=int, default=40)
     parser.add_argument("--patience", type=int, default=7)
     parser.add_argument("--frames", type=int, default=64)
@@ -67,7 +64,7 @@ def prepare_cache(args: argparse.Namespace) -> pd.DataFrame:
     if index_path.exists():
         cached = pd.read_csv(index_path, dtype={"subject_id": str, "study_id": str, "file_id": str})
         if len(cached) > 0 and cached.path.map(lambda value: Path(value).exists()).all():
-            print(f"M5 cache ready cines={len(cached)}", flush=True)
+            print(f"Teacher cache ready cines={len(cached)}", flush=True)
             return cached
     source = pd.read_csv(args.manifest, dtype={"subject_id": str, "study_id": str, "file_id": str})
     records = []
@@ -91,9 +88,9 @@ def prepare_cache(args: argparse.Namespace) -> pd.DataFrame:
                 }
             )
         except Exception as error:
-            print(f"M5 CACHE WARN {number}: {type(error).__name__}: {error}", flush=True)
+            print(f"Teacher CACHE WARN {number}: {type(error).__name__}: {error}", flush=True)
         if number % 50 == 0 or number == len(source):
-            print(f"M5 cache {number}/{len(source)} usable={len(records)}", flush=True)
+            print(f"Teacher cache {number}/{len(source)} usable={len(records)}", flush=True)
     cached = pd.DataFrame(records)
     cached.to_csv(index_path, index=False)
     return cached
@@ -136,45 +133,6 @@ class CineDataset(Dataset):
             "lvef": torch.tensor(float(row.lvef), dtype=torch.float32),
             "study_id": str(row.study_id),
         }
-
-
-class StudyDataset(Dataset):
-    def __init__(self, frame: pd.DataFrame, args: argparse.Namespace, training: bool):
-        self.groups = [(study, part.reset_index(drop=True)) for study, part in frame.groupby("study_id", sort=True)]
-        self.args = args
-        self.training = training
-
-    def __len__(self) -> int:
-        return len(self.groups)
-
-    def __getitem__(self, index: int) -> dict[str, torch.Tensor | str]:
-        study_id, part = self.groups[index]
-        if self.training:
-            chosen = np.random.choice(len(part), self.args.cines_per_study, replace=len(part) < self.args.cines_per_study)
-            part = part.iloc[chosen]
-        clips = torch.stack(
-            [sample_clip(row.path, self.args.frames, self.args.stride, self.training) for row in part.itertuples()]
-        )
-        ratio = float(part.manual_ratio.iloc[0]) if "manual_ratio" in part and pd.notna(part.manual_ratio.iloc[0]) else np.nan
-        return {
-            "clips": clips,
-            "lvef": torch.tensor(float(part.lvef.iloc[0]), dtype=torch.float32),
-            "manual_ratio": torch.tensor(ratio, dtype=torch.float32),
-            "study_id": str(study_id),
-        }
-
-
-def add_manual_ratio(frame: pd.DataFrame, manifest: Path) -> pd.DataFrame:
-    measurement_path = manifest.parents[1] / "restricted_structured_measurements.csv"
-    if not measurement_path.exists():
-        frame["manual_ratio"] = np.nan
-        return frame
-    measured = pd.read_csv(measurement_path, dtype={"study_id": str})
-    measured["manual_ratio"] = pd.to_numeric(measured.lvesd, errors="coerce") / pd.to_numeric(
-        measured.lvedd, errors="coerce"
-    )
-    measured = measured.loc[measured.plausible_lvid_pair.astype(str).str.lower().eq("true"), ["study_id", "manual_ratio"]]
-    return frame.merge(measured.drop_duplicates("study_id"), on="study_id", how="left")
 
 
 def subset_training(frame: pd.DataFrame, args: argparse.Namespace) -> pd.DataFrame:
@@ -248,32 +206,6 @@ def predict_gao(model, loader, device) -> pd.DataFrame:
     return study
 
 
-@torch.inference_mode()
-def predict_study(model, dataset: StudyDataset, device, shuffle_frames: bool = False) -> pd.DataFrame:
-    model.eval()
-    rows = []
-    for number in range(len(dataset)):
-        study_id, part = dataset.groups[number]
-        clips = torch.stack(
-            [
-                sample_clip(row.path, dataset.args.frames, dataset.args.stride, False, shuffle_frames)
-                for row in part.itertuples()
-            ]
-        ).to(device)
-        output = model.predict_chunked(clips, chunk_size=dataset.args.cines_per_study)
-        rows.append(
-            {
-                "study_id": study_id,
-                "reference_lvef": float(part.lvef.iloc[0]),
-                "predicted_lvef": float(output["lvef"].cpu()),
-                "low_probability": float(output["low_ef_logit"].sigmoid().cpu()),
-                "cine_n": len(part),
-                "cine_attention_max": float(output["cine_attention"].max().cpu()),
-            }
-        )
-    return pd.DataFrame(rows)
-
-
 def train_gao(args, frame, device):
     train = subset_training(frame, args)
     parts = {split: frame.loc[frame.split.eq(split)] for split in ("validation", "test")}
@@ -308,7 +240,7 @@ def train_gao(args, frame, device):
         result = metrics(validation, threshold)
         scheduler.step(result["mae"])
         history.append({"epoch": epoch, "loss": float(np.mean(losses)), "validation": result})
-        print(f"M5-A epoch={epoch:02d} loss={np.mean(losses):.3f} val_mae={result['mae']:.3f} low_mae={result['low_ef_mae']:.3f} auroc={result['auroc']:.3f}", flush=True)
+        print(f"Teacher epoch={epoch:02d} loss={np.mean(losses):.3f} val_mae={result['mae']:.3f} low_mae={result['low_ef_mae']:.3f} auroc={result['auroc']:.3f}", flush=True)
         if best is None or result["mae"] < best[0]:
             best = (result["mae"], epoch, threshold); stale = 0
             torch.save({"model": model.state_dict(), "epoch": epoch}, args.secure_output / "best.pt")
@@ -324,110 +256,20 @@ def train_gao(args, frame, device):
     return model, history, metrics(validation, threshold), metrics(test, threshold), validation, test
 
 
-def train_study(args, frame, device):
-    train = subset_training(frame, args)
-    datasets = {
-        "train": StudyDataset(train, args, True),
-        "validation": StudyDataset(frame.loc[frame.split.eq("validation")], args, False),
-        "test": StudyDataset(frame.loc[frame.split.eq("test")], args, False),
-    }
-    train_studies = train.drop_duplicates("study_id")
-    target = train_studies.lvef.to_numpy(float)
-    bins = np.digitize(target, [30, 40, 50, 60])
-    counts = np.bincount(bins, minlength=5)
-    bin_weights = np.clip(len(target) / (5 * np.maximum(counts, 1)), 0.5, 3.0)
-    low_pos_weight = min(float(np.sum(target > 40) / max(np.sum(target <= 40), 1)), 3.0)
-    loader = DataLoader(datasets["train"], batch_size=1, shuffle=True, num_workers=0, pin_memory=True)
-    physiology = args.variant == "mil_physiology"
-    model = StudyTemporalTeacher(pretrained=True, physiology_head=physiology).to(device)
-    optimizer = torch.optim.AdamW(
-        [
-            {"params": model.encoder.parameters(), "lr": 1e-4},
-            {"params": [p for name, p in model.named_parameters() if not name.startswith("encoder.")], "lr": 5e-4},
-        ], weight_decay=1e-4
-    )
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
-    scaler = torch.amp.GradScaler("cuda", enabled=device.type == "cuda")
-    best, stale, history = None, 0, []
-    for epoch in range(1, args.epochs + 1):
-        model.train(); optimizer.zero_grad(set_to_none=True); losses = []
-        for step, batch in enumerate(loader, 1):
-            clips = batch["clips"].to(device, non_blocking=True)
-            reference = batch["lvef"].to(device)
-            with torch.amp.autocast("cuda", enabled=device.type == "cuda"):
-                output = model(clips)
-                sample_bins = torch.bucketize(reference, ORDINAL_THRESHOLDS.to(device))
-                sample_weight = torch.as_tensor(bin_weights, device=device)[sample_bins]
-                regression = F.smooth_l1_loss(output["lvef"], reference, beta=5.0, reduction="none")
-                loss = (regression * sample_weight).mean()
-                if args.variant != "mil_regression":
-                    low_target = reference.le(40).float()
-                    low = F.binary_cross_entropy_with_logits(
-                        output["low_ef_logit"], low_target,
-                        pos_weight=torch.tensor(low_pos_weight, device=device),
-                    )
-                    ordinal_target = reference[:, None].le(ORDINAL_THRESHOLDS.to(device)).float()
-                    ordinal = F.binary_cross_entropy_with_logits(output["ordinal_logits"], ordinal_target)
-                    loss = loss + 0.25 * low + 0.15 * ordinal
-                if physiology:
-                    ratio = batch["manual_ratio"].to(device)
-                    available = torch.isfinite(ratio)
-                    if available.any():
-                        loss = loss + 0.20 * F.smooth_l1_loss(output["lvid_ratio"][available], ratio[available], beta=0.05)
-                loss = loss / args.accumulate
-            scaler.scale(loss).backward()
-            if step % args.accumulate == 0 or step == len(loader):
-                scaler.unscale_(optimizer); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-                scaler.step(optimizer); scaler.update(); optimizer.zero_grad(set_to_none=True)
-            losses.append(float(loss.detach()) * args.accumulate)
-        scheduler.step()
-        validation = predict_study(model, datasets["validation"], device)
-        if args.variant == "mil_regression":
-            validation["low_probability"] = torch.sigmoid(torch.tensor((40.0 - validation.predicted_lvef.to_numpy()) / 5.0)).numpy()
-        threshold = choose_threshold(validation.reference_lvef.to_numpy(), validation.low_probability.to_numpy())
-        result = metrics(validation, threshold)
-        history.append({"epoch": epoch, "loss": float(np.mean(losses)), "validation": result})
-        print(f"M5-B/{args.variant} epoch={epoch:02d} loss={np.mean(losses):.3f} val_mae={result['mae']:.3f} low_mae={result['low_ef_mae']:.3f} auroc={result['auroc']:.3f} sensitivity={result['sensitivity']:.3f}", flush=True)
-        score = result["mae"]
-        if best is None or score < best[0]:
-            best = (score, epoch, threshold); stale = 0
-            torch.save({"model": model.state_dict(), "epoch": epoch}, args.secure_output / "best.pt")
-        else:
-            stale += 1
-        if stale >= args.patience:
-            break
-    checkpoint = torch.load(args.secure_output / "best.pt", map_location=device, weights_only=True)
-    model.load_state_dict(checkpoint["model"])
-    validation = predict_study(model, datasets["validation"], device)
-    test = predict_study(model, datasets["test"], device)
-    if args.variant == "mil_regression":
-        for predictions in (validation, test):
-            predictions["low_probability"] = torch.sigmoid(torch.tensor((40.0 - predictions.predicted_lvef.to_numpy()) / 5.0)).numpy()
-    threshold = choose_threshold(validation.reference_lvef.to_numpy(), validation.low_probability.to_numpy())
-    shuffled = predict_study(model, datasets["test"], device, shuffle_frames=True)
-    if args.variant == "mil_regression":
-        shuffled["low_probability"] = torch.sigmoid(torch.tensor((40.0 - shuffled.predicted_lvef.to_numpy()) / 5.0)).numpy()
-    return model, history, metrics(validation, threshold), metrics(test, threshold), validation, test, metrics(shuffled, threshold)
-
-
 def main() -> None:
     args = parse_args(); seed_everything(args.seed)
     args.secure_output.mkdir(parents=True, exist_ok=True)
     args.summary_output.mkdir(parents=True, exist_ok=True)
     frame = prepare_cache(args)
-    frame = add_manual_ratio(frame, args.manifest)
     overlaps = []
     for left, right in (("train", "validation"), ("train", "test"), ("validation", "test")):
         overlaps.append(set(frame.loc[frame.split.eq(left), "subject_id"]) & set(frame.loc[frame.split.eq(right), "subject_id"]))
     if any(overlaps):
-        raise ValueError("Patient leakage in M5 manifest")
+        raise ValueError("Patient leakage in Teacher manifest")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"M5 variant={args.variant} device={device} cines={len(frame)} studies={frame.study_id.nunique()}", flush=True)
-    if args.variant == "gao":
-        model, history, validation, test, validation_predictions, predictions = train_gao(args, frame, device)
-        shuffled = None
-    else:
-        model, history, validation, test, validation_predictions, predictions, shuffled = train_study(args, frame, device)
+    print(f"Teacher variant={args.variant} device={device} cines={len(frame)} studies={frame.study_id.nunique()}", flush=True)
+    model, history, validation, test, validation_predictions, predictions = train_gao(args, frame, device)
+    shuffled = None
     validation_predictions.to_csv(args.secure_output / "restricted_validation_predictions.csv", index=False)
     predictions.to_csv(args.secure_output / "restricted_test_predictions.csv", index=False)
     summary = {
@@ -446,7 +288,7 @@ def main() -> None:
     (args.secure_output / "history.json").write_text(json.dumps(history, indent=2), encoding="utf-8")
     (args.summary_output / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     print(json.dumps(summary, indent=2), flush=True)
-    print(f"M5 {args.variant} COMPLETE", flush=True)
+    print(f"Teacher {args.variant} COMPLETE", flush=True)
 
 
 if __name__ == "__main__":

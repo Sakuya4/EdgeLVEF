@@ -1,78 +1,27 @@
-# Validation roadmap
+# Evaluation design
 
-The next work is divided by evidence source. Board testing, external-dataset
-evaluation, and expert review answer different questions and must not be merged
-into one vague validation result.
+EdgeLVEF evaluation connects study-level EF estimation with component and device measurements.
 
-## Track A: physical-board verification
+## EF estimation
 
-**Owner:** the person holding the Embedded Linux board.
+Use patient-separated training, validation and evaluation partitions. Lock preprocessing, checkpoint and score threshold before inference. Aggregate eligible cines within each study and retain an accounting of all inputs.
 
-**Purpose:** determine whether the frozen Student Model executes correctly on
-the intended hardware and runtime.
+Report MAE and RMSE in LVEF percentage points, bias, Pearson r, CCC, Bland–Altman limits and within-5/10-point rates. Report the screening head and numerical EF ≤ 40% rule separately. Paired model comparisons use aligned studies and an identified bootstrap resampling unit.
 
-**Actions:**
+## Input and anatomical modules
 
-1. clone the recorded Git commit;
-2. run repository tests and both SHA-256 checks;
-3. run the CPU baseline benchmark;
-4. run an NPU provider only if the runtime exposes and confirms it;
-5. analyze several de-identified full-cycle PLAX cines;
-6. render overlays and record wall/ED/ES failures.
+Readiness Gate evaluation reports view and readiness classification alongside the source and definition of quality targets. Anatomical measurement adapters report localization, trajectory and measurement agreement. Their component metrics are recorded independently of the video Student's EF error.
 
-**Return:** benchmark JSON, functional-cine JSON, environment versions, active
-provider, and visual findings. Do not return patient media unless governance
-permits it.
+## Runtime consistency
 
-## Track B: frozen external comparison
+Maintain a fixed input set and artifact checksum. Compare workstation and device outputs through the complete preprocessing and temporal path. Record the selected execution provider and model version in each result.
 
-**Owner:** the model/research team after approved MIMIC-IV-ECHO access.
+Quantized and converted artifacts receive a new identity. Compare their outputs with the corresponding floating-point model using the same input set.
 
-**Purpose:** compare the Student Model and Gao PLAX-EF Teacher on the same adult
-PLAX studies without retuning either method.
+## Device measurements
 
-**Actions:**
+Record end-to-end latency, per-model latency, memory, power and acquisition continuity on the physical board. The [embedded procedures](embedded-linux.md) define operator commands and environment fields. Existing measurement-adapter tests and selected video-Student measurements are identified by their model signatures.
 
-1. obtain credentialed MIMIC-IV-ECHO pixels under the DUA;
-2. keep the Student Model, frozen head, preprocessing, and threshold unchanged;
-3. run Student and Gao predictions on identical eligible cines;
-4. aggregate multiple cines by study median;
-5. report MAE, RMSE, bias, Bland--Altman limits, AUROC, AUPRC, sensitivity,
-   specificity, PPV, NPV, and study-level bootstrap intervals;
-6. retain every missing, corrupt, or failed cine in the accounting table.
+## System operation
 
-**Return:** cohort flow, per-study predictions, paired metrics, confidence
-intervals, and failure manifest. External cases are evaluation-only and cannot
-become a new tuning set.
-
-## Track C: blinded image audit
-
-**Owner:** at least one reviewer who can recognize PLAX anatomy; two independent
-reviewers are preferred.
-
-**Purpose:** determine whether the Student Model tracks the intended opposing LV
-walls and selects plausible ED/ES frames, rather than merely producing a useful
-ranking score.
-
-**Actions:**
-
-1. provide blinded overlay videos without LVEF or low-EF labels;
-2. rate PLAX compatibility, both wall paths, ED, ES, and overall usability;
-3. lock the forms before opening the private case key;
-4. report item-level acceptance with exact confidence intervals;
-5. report Cohen kappa when two reviewers are available.
-
-**Return:** locked rating forms and summary JSON. Operator or AI ratings cannot
-be presented as an expert clinical audit.
-
-## Integration gate
-
-After all three tracks return, update the model card with separate subsections:
-
-- hardware feasibility;
-- external predictive performance;
-- anatomical/phase audit.
-
-Only then decide whether the evidence supports an engineering journal paper or
-whether additional low-EF and multi-device data are required. Do not retrain in
-response to any validation result until the complete frozen report is archived.
+Evaluate acquisition, input review, inference, result display and reset as one device session. The local P42 adapter handles authorized SDK access and board-local transport; the Linux application handles display and result sessions. Record reconnection and service behavior alongside the model execution report.

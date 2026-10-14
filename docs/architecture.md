@@ -1,76 +1,45 @@
-# Clean Architecture
+# EdgeLVEF architecture
 
-The repository keeps physiology rules independent from runtimes and user
-interfaces. Dependencies point inward.
+EdgeLVEF separates offline learning from device inference. The Teacher learns spatiotemporal features during model development; the Student carries the video analysis path on the target device. Input assessment and acquisition are separate modules with explicit interfaces.
 
-```text
-interfaces/cli
-    -> application/analyze_cine
-        -> domain/wall_tracking + domain/lvef
-        -> application/ports.WallProbabilityModel
-    -> infrastructure adapters
+## A. Offline learning
 
-infrastructure/onnx_wall_model
-    implements WallProbabilityModel
+![Teacher–Student learning and Student inference](assets/edgelvef-architecture.png)
 
-interfaces/scripts/run_m1_lvef3
-    -> application/analyze_lvid_cine
-        -> domain/interpretable_lvef
-        -> application/ports.LvidTrajectoryModel
-    -> infrastructure/onnx_lvid_tracker + calibration_config
-```
+Figure 1. Teacher and feature projector participate in offline learning. Student inference integrates frame encoding, temporal exchange, dilated temporal processing and pooled predictions. Dashed arrows denote supervision; the Readiness Gate is a separate system module.
 
-## Layer responsibilities
+| Stage | Input | Computation | Output |
+|---|---|---|---|
+| Teacher learning | 64-frame PLAX clips and report-linked EF | Two R(2+1)D-18 cine regressors | Ensemble EF and 512-D representation |
+| Student spatial encoding | 32 grayscale frames, 112 × 112 | MobileNetV3-Large; temporal shift before the final four encoder blocks | 960-D feature per frame |
+| Student temporal encoding | Frame feature sequence | 960 → 128 projection; residual depthwise temporal convolutions with dilations 1, 2, 4 | 128-channel temporal sequence |
+| Video pooling | Temporal sequence | Concatenate temporal mean and maximum pooling | 256-D video feature |
+| Prediction and transfer | Video feature and training targets | EF regression head, low-EF head, training-only 256 → 512 projector | Supervised and distilled learning objectives |
 
-### Domain
+The training objective combines report EF, ensemble EF, Teacher-derived low-EF soft targets and cosine feature alignment. The [method](../research/plax_lvef/METHOD.md) specifies the coefficients and optimization settings.
 
-`domain/wall_tracking.py` contains only NumPy geometry:
+## B. Device inference
 
-- two-wall centerline extraction;
-- temporal trajectory smoothing;
-- ED/ES candidate selection;
-- global and regional fractional shortening.
+The analysis contract accepts a PLAX cine and returns an LVEF estimate and low-EF score. The Student performs frame encoding, temporal integration and prediction without Teacher inference. For study-level analysis, predictions from eligible cines are averaged.
 
-`domain/lvef.py` contains the frozen mapping and low-EF decision rule. It does
-not import OpenCV, ONNX Runtime, PyTorch, or operating-system APIs.
+The PLAX Readiness Gate processes five-frame windows with a MobileNetV3-Small encoder and feature pooling. Separate heads produce view, four-level readiness and five quality outputs. These describe input conditions and are separate from the Student's EF estimate.
 
-`domain/interpretable_lvef.py` contains the three-parameter monotonic mapping
-from measured LVIDd/LVIDs to the M1-LVEF3 development estimate. It exposes the
-raw ratio and applicability-range check.
+The acquisition design uses an authorized Aco Android SDK in a headless runtime on i.MX93. A board-local Unix socket transports image frames to the native Linux application. The interface displays ultrasound and analysis; the acquisition adapter owns reconnection and stream handling.
 
-### Application
+| System component | Responsibility | Implementation |
+|---|---|---|
+| Acquisition | Receive P42 images through the authorized SDK and local transport | `hardware/aco-p42-imx93-headless-sidecar/` |
+| Input assessment | View, readiness and quality summary | `edgelvef/application/assess_readiness.py` |
+| Video model | Compact spatiotemporal LVEF network | `research/plax_lvef/src/plax_lvef/model.py` |
+| Application | Video display, result presentation and measurement sessions | `edgelvef_app/` |
+| Runtime adapters | Decode inputs, load configured artifacts and record execution metadata | `edgelvef/infrastructure/` |
 
-`application/analyze_cine.py` coordinates one analysis. It accepts a
-`WallProbabilityModel` port, extracts wall features, and applies the frozen
-head. The application layer does not know whether inference runs on CPU, GPU,
-or an NPU provider.
+## Source organization
 
-### Infrastructure
+The application follows inward dependency boundaries. Domain functions contain geometry and numeric rules. Application use cases coordinate domain logic through ports. Infrastructure provides video, model-runtime and configuration adapters; interfaces handle CLI and UI input.
 
-- `onnx_wall_model.py`: preprocessing and ONNX Runtime adapter.
-- `video.py`: MP4/AVI/MOV/MKV/NPZ decoding.
-- `head_config.py`: JSON configuration adapter.
-- `benchmark.py`: target-system and latency measurements.
-- `onnx_lvid_tracker.py`: role-invariant LVID endpoint and trajectory adapter.
-- `calibration_config.py`: frozen M1-LVEF3 parameter loader.
+The importable video architecture is defined in `edgelvef/research/video_distillation.py`. The training package includes the six-backbone implementation, authorized-data loaders and optimization scripts. Existing measurement adapters remain available to their operator commands; research model definitions are maintained independently of hardware configuration.
 
-### Interfaces
+## Deployment design
 
-CLI modules parse operator input and serialize results. They contain no model
-math. `scripts/` contains only thin launchers around these interfaces.
-
-## Frozen artifact rule
-
-Board validation must use the files under `models/student_model/` without
-editing them. Any retraining, threshold selection, quantization, or graph
-conversion creates a new model version and requires a new model card, checksum,
-and validation report.
-
-## M5 research-only Teacher/Student path
-
-`edgelvef/research/m5_teacher_student.py` contains the PyTorch definitions for
-the M5 R(2+1)D Teacher and MobileNetV3-Small+TSM Student. This module is kept
-outside the Clean Architecture inference path: it is research/training code,
-not an application or infrastructure adapter. The deployment path will consume
-an exported, separately validated Student artifact only after INT8 and physical
-i.MX93 gates pass.
+The target is an Embedded Linux device with local image processing. Model conversion, execution-provider selection and the complete temporal path are explicit parts of the deployment design. Architecture size is reported as parameter count; device performance is recorded separately by the hardware evaluation procedures.

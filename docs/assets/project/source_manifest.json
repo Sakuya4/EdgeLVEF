@@ -1,0 +1,54 @@
+{
+  "source": "EdgeLVEF project description 4.0",
+  "figures": [
+    {
+      "file": "probe-board-connection.jpeg",
+      "source_page": 4,
+      "width": 1269,
+      "height": 951,
+      "sha256": "b99af2ed4bf924bf5d581f07e3b30bc7246c2e6a251affe57ff6eeabf83abc1f"
+    },
+    {
+      "file": "power-supply.jpeg",
+      "source_page": 5,
+      "width": 1177,
+      "height": 883,
+      "sha256": "37796e7f2d486e119bf1ac8b86633d7f03e060feb9a13ac52fb0625e28d41f0f"
+    },
+    {
+      "file": "external-circuit.jpeg",
+      "source_page": 5,
+      "width": 779,
+      "height": 555,
+      "sha256": "05dc922df1bfbc759f71b41294a92cb7a28fd0d98a7f5fc1531ba9c58ed0241f"
+    },
+    {
+      "file": "pcb-layout.png",
+      "source_page": 6,
+      "width": 1135,
+      "height": 678,
+      "sha256": "170dc9c180e7b0570b553363076d082e29ac2659475df6d5fe30a9da58a303e3"
+    },
+    {
+      "file": "enclosure-design.jpeg",
+      "source_page": 6,
+      "width": 1060,
+      "height": 565,
+      "sha256": "ee39ddb165369a42d45344499d65276bf63a3a76f5cd8893050faa125f93b0a1"
+    },
+    {
+      "file": "portable-system.jpeg",
+      "source_page": 8,
+      "width": 1047,
+      "height": 785,
+      "sha256": "8b31c155e7509d0334bdefbda0abc6588e4cfa93ccb4ffc634f798955461de2d"
+    },
+    {
+      "file": "application-interface.jpeg",
+      "source_page": 8,
+      "width": 1029,
+      "height": 773,
+      "sha256": "c9d3e7f0d448188784fe677634abaa6fef4c9567fba6c91b171032c9b3a8b900"
+    }
+  ]
+}
